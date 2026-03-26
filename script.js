@@ -1,4 +1,4 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxo9W7fw3ySSQozgghNXD0OOfmkfXZEmR4O2jPZKUrCtIXYFGfi2APwZENqurrI2nzK/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw7Kwde2YnbI15wZD2oa33n44gzJm-RoAhfzDdRPdM-BIhiLqu0UljP6Vrigms86URm/exec";
 
 let lastDealData = null;
 
@@ -165,17 +165,12 @@ function saveDeal() {
   fetch(SCRIPT_URL, {
     method: "POST",
     body: JSON.stringify(lastDealData),
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    }
+    mode: "no-cors" // 🔥 THIS FIXES GOLD
   })
-  .then(res => res.text())
-  .then(data => {
-    console.log("Response:", data);
+  .then(() => {
     alert("Saved ✅");
   })
-  .catch(err => {
-    console.error("ERROR:", err);
+  .catch(() => {
     alert("Error saving ❌");
   });
 }
