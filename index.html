@@ -23,22 +23,24 @@
     </div>
 
     <!-- INPUT -->
-    <div class="form">
-      <input type="number" id="goldPrice" placeholder="Gold Price">
-      <input type="number" id="weight" placeholder="Weight">
-      <input type="number" id="askingPrice" placeholder="Asking Price">
+<div class="form">
+  <input type="number" id="goldPrice" placeholder="Gold Price (24k)">
+  <input type="number" id="weight" placeholder="Weight (grams)">
 
-      <select id="purity">
-        <option value="0.999">24k</option>
-        <option value="0.916">22k</option>
-        <option value="0.875">21k</option>
-        <option value="0.750">18k</option>
-        <option value="0.585">14k</option>
-      </select>
+  <input type="number" id="askingPrice" placeholder="Total Asking Price (₱)">
+  <input type="number" id="pricePerGramInput" placeholder="Price per gram (₱)">
 
-      <button id="calcBtn">Calculate</button>
-      <button id="saveBtn">Save Deal</button>
-    </div>
+  <select id="purity">
+    <option value="0.999">24k</option>
+    <option value="0.916">22k</option>
+    <option value="0.875">21k</option>
+    <option value="0.750">18k</option>
+    <option value="0.585">14k</option>
+  </select>
+
+  <button id="calcBtn">Calculate</button>
+  <button id="saveBtn">Save Deal</button>
+</div>
 
     <div class="results" id="results"></div>
 
