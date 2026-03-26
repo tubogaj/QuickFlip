@@ -268,12 +268,7 @@ async function generatePDF() {
 
   // ================= YOUR EXACT CONTENT =================
   const content = `
-  // 🔥 CLEAN TEXT (ETO KULANG MO)
-const cleanContent = content
-  .replace(/\r\n/g, "\n")        // normalize line breaks
-  .replace(/[^\S\r\n]+/g, " ")   // remove weird spaces (except line breaks)
-  .replace(/\n{2,}/g, "\n\n")    // fix excessive spacing
-  .trim();
+
 LOAN AGREEMENT
 
 This Loan Agreement is entered into by and between:
@@ -347,13 +342,20 @@ doc.setFontSize(11);
 
 // 🔥 CRITICAL FIX (this fixes hiwa-hiwalay letters)
 doc.setCharSpace(0);
-
+  
+ const cleanContent = content
+  .replace(/\r/g, "")
+  .replace(/[^\S\n]+/g, " ")
+  .replace(/\n{2,}/g, "\n\n")
+  .trim(); 
+  
 // ✅ Let jsPDF handle paragraph flow properly
 doc.text(cleanContent, 15, 15, {
   maxWidth: 180,
   lineHeightFactor: 1.5
 });
 
+  
   // ✅ CRITICAL FIX (missing before)
 doc.save(`Loan_Agreement_${name}.pdf`);
 }
