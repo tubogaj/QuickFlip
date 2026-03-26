@@ -166,18 +166,188 @@ function saveDeal() {
   .catch(() => alert("Error ❌"));
 }
 
+// ================= LOANS =================
+function generateLoan() {
+  const principal = +document.getElementById("principal").value;
+  const term = document.getElementById("loanTerm").value;
+
+  if (!principal) {
+    document.getElementById("loanResult").innerHTML = "";
+    return;
+  }
+
+  const interest = principal * 0.20;
+  const total = principal + interest;
+
+  let interval = 30;
+  if (term === "Weekly") interval = 7;
+  if (term === "Bi-Monthly") interval = 15;
+
+  const today = new Date();
+  let dates = [];
+  let temp = new Date(today);
+
+  while (true) {
+    temp = new Date(temp);
+    temp.setDate(temp.getDate() + interval);
+
+    if ((temp - today) / (1000 * 60 * 60 * 24) > 30) break;
+
+    dates.push(temp.toLocaleDateString());
+  }
+
+  document.getElementById("loanResult").innerHTML = `
+    <h3>Loan Breakdown</h3>
+    Capital: ₱${principal}<br>
+    Interest: ₱${interest.toFixed(0)} | 20%<br>
+    Amount Due: ₱${total.toFixed(0)}<br>
+    <strong>Due Dates:</strong><br>
+    ${dates.join("<br>")}
+  `;
+
+  window.loanData = {
+    type:"loan",
+    name:document.getElementById("name").value,
+    address:document.getElementById("address").value,
+    idType:document.getElementById("idType").value,
+    idNumber:document.getElementById("idNumber").value,
+    principal,
+    interest,
+    profit:interest,
+    loanTerm:term,
+    dueDate:dates.join(", ")
+  };
+}
+
+// ================= SAVE LOAN =================
+function saveLoan() {
+  if (!window.loanData) return alert("No loan");
+
+  fetch(SCRIPT_URL, {
+    method:"POST",
+    body:JSON.stringify(window.loanData),
+    headers:{ "Content-Type":"text/plain;charset=utf-8" }
+  })
+  .then(res => res.text())
+  .then(() => alert("Loan Saved ✅"))
+  .catch(() => alert("Error ❌"));
+}
+
 // ================= PDF =================
 async function generatePDF() {
-  if (!window.loanData) return alert("Generate loan first");
+  if (!window.loanData) {
+    alert("Generate loan first");
+    return;
+  }
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  doc.setFont("Times", "Normal");
-  doc.setFontSize(11);
+  // ================= INPUTS =================
+  const name = document.getElementById("name").value;
+  const address = document.getElementById("address").value;
+  const idType = document.getElementById("idType").value;
+  const idNumber = document.getElementById("idNumber").value;
+  const principal = +document.getElementById("principal").value;
+  const loanTerm = document.getElementById("loanTerm").value;
 
-  const lines = doc.splitTextToSize("Sample PDF Test", 180);
-  doc.text(lines, 10, 10);
+  const dateStr = new Date().toLocaleDateString();
+
+  // ================= CALC =================
+  const interest = principal * 0.20;
+  const total = principal + interest;
+
+  // IMPORTANT: use same structure as your loanData
+  const dueDatesArray = window.loanData.dueDate.split(",").map(d => d.trim());
+  const finalDueDate = dueDatesArray[dueDatesArray.length - 1];
+
+  // divide based on number of payments
+  const perPayment = total / dueDatesArray.length;
+
+  const peso = (n) => `₱${Number(n).toFixed(0)}`;
+
+  // ================= YOUR EXACT CONTENT =================
+  const content = `
+LOAN AGREEMENT
+
+This Loan Agreement is entered into by and between:
+
+Arnie Joyce A Tubog, of legal age, Filipino, with address at 099 Taal St, Libis, Binangonan, Rizal, hereinafter referred to as the “Lender”;
+
+and
+
+${name}, of legal age, Filipino, with address at ${address}, holding valid ID ${idType} ${idNumber}, hereinafter referred to as the “Borrower”.
+
+1. Loan Amount
+The Lender agrees to lend the Borrower the amount of ${peso(principal)}, which the Borrower acknowledges having received in full as of the date of this Agreement.
+
+2. Interest and Term
+The Borrower agrees to pay interest at the rate of twenty percent (20%) per month. The total loan obligation, including interest, shall be due and payable on or before ${finalDueDate}, in accordance with the agreed loan term.
+
+3. Mode of Payment
+Payment shall be made based on the agreed schedule below:
+
+${dueDatesArray.map((d) => `• ${d} - ${peso(perPayment)}`).join("\n")}
+
+Total Obligation: ${peso(total)}
+
+4. Obligation to Pay
+The Borrower binds himself/herself to pay the full amount of the loan, including interest and any applicable penalties, on the agreed due date without the need for prior demand.
+
+5. Penalties
+In case of delayed payment, the Borrower agrees to pay a penalty of One Hundred Pesos (₱100.00) per week from the date of default until full payment of the past-due amount is made.
+
+6. Default
+Failure to pay the total obligation on the due date shall constitute default. Upon default, the entire outstanding balance, including principal, accrued interest, penalties, and other lawful charges, shall become immediately due and demandable.
+
+7. Legal Remedies
+In the event of default, the Lender shall have the right to pursue all remedies available under the laws of the Republic of the Philippines, including but not limited to filing a civil action for the collection of the sum of money and damages. The Borrower agrees to pay attorney’s fees equivalent to a reasonable percentage of the amount due, as well as all legal costs and expenses of collection as allowed by law.
+
+8. Representation of the Borrower
+The Borrower represents that all information provided to the Lender is true and correct, and that he/she has the capacity and willingness to fulfill the obligation under this Agreement.
+
+9. Governing Law and Venue
+This Agreement shall be governed by the laws of the Republic of the Philippines. Any legal action arising from this Agreement shall be filed exclusively in the proper courts of Rizal.
+
+IN WITNESS WHEREOF, signed on ${dateStr} at ${address}.
+
+
+LENDER: Arnie Joyce A Tubog
+
+
+BORROWER: ________________________
+
+
+WITNESS: ________________________
+
+
+WITNESS: ________________________
+`;
+
+  // ================= FORMAT (FIX CUT TEXT ISSUE) =================
+// Better font rendering
+doc.setFont("Times", "Normal");
+doc.setFontSize(11);
+
+// Proper margins
+const marginLeft = 15;
+const marginTop = 15;
+const pageWidth = 180;
+const lineHeight = 6;
+
+const lines = doc.splitTextToSize(content, pageWidth);
+
+let y = marginTop;
+
+lines.forEach(line => {
+  if (y > 280) { // page break
+    doc.addPage();
+    y = marginTop;
+  }
+
+  doc.text(line, marginLeft, y);
+  y += lineHeight;
+});
 
   // ✅ CRITICAL FIX (missing before)
   doc.save("Loan_Agreement.pdf");
