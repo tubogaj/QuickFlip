@@ -1,4 +1,4 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBRkuawkeCNJ4907J7X7pAM64sRwcA8xzHZ1zuCd7lgRLDdxHxLZ6BcDC-9LRaFJu9/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxo9W7fw3ySSQozgghNXD0OOfmkfXZEmR4O2jPZKUrCtIXYFGfi2APwZENqurrI2nzK/exec";
 
 let lastDealData = null;
 
@@ -160,22 +160,15 @@ function saveDeal() {
     return;
   }
 console.log("Sending:", lastDealData);
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    body: JSON.stringify(lastDealData),
-    headers: {
-      "Content-Type": "application/json"
-    }
-  })
-  .then(res => res.text())
-  .then(data => {
-    console.log("Server response:", data);
-    alert("Saved to sheet ✅");
-  })
-  .catch(err => {
-    console.error("Save error:", err);
-    alert("Error saving ❌");
-  });
+fetch(SCRIPT_URL, {
+  method: "POST",
+  body: JSON.stringify(lastDealData),
+  headers: {
+    "Content-Type": "text/plain;charset=utf-8"
+  }
+})
+.then(() => alert("Saved ✅"))
+.catch(() => alert("Error ❌"));
 }
 
 // ================= LOANS =================
