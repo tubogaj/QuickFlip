@@ -159,18 +159,26 @@ function saveDeal() {
     alert("No data - calculate first");
     return;
   }
-console.log("Sending:", lastDealData);
-fetch(SCRIPT_URL, {
-  method: "POST",
-  body: JSON.stringify(lastDealData),
-  headers: {
-    "Content-Type": "text/plain;charset=utf-8"
-  }
-})
-.then(() => alert("Saved ✅"))
-.catch(() => alert("Error ❌"));
-}
 
+  console.log("Sending GOLD:", lastDealData);
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify(lastDealData),
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    }
+  })
+  .then(res => res.text())
+  .then(data => {
+    console.log("Response:", data);
+    alert("Saved ✅");
+  })
+  .catch(err => {
+    console.error("ERROR:", err);
+    alert("Error saving ❌");
+  });
+}
 // ================= LOANS =================
 function generateLoan() {
   const principal = +document.getElementById("principal").value;
