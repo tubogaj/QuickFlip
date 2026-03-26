@@ -3,7 +3,6 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuickFlip - Gold Calculator</title>
-
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -11,9 +10,12 @@
 
 <div class="container">
 
+<div class="header">
+  <h1>QuickFlip</h1>
+  <div class="live">Live Gold: <span id="livePrice">Loading...</span></div>
+</div>
+
 <div class="card">
-<h2>QuickFlip 💰</h2>
-<div class="small">Live Gold: <span id="livePrice">Loading...</span></div>
 
 <input id="weight" placeholder="Weight (grams)" type="number">
 <input id="price" placeholder="Total Price (₱)" type="number">
@@ -26,21 +28,11 @@
 </select>
 
 <button onclick="analyze()">Analyze Deal</button>
-<button onclick="saveDeal()">Save to Cloud ☁️</button>
-
-<div id="output" style="margin-top:15px;"></div>
-</div>
-
-<div class="card">
-<h3>📊 Local History</h3>
-<div id="history"></div>
-<br>
-<b>Total Profit: ₱<span id="totalProfit">0</span></b>
-</div>
+<button class="secondary" onclick="saveDeal()">Save to Cloud ☁️</button>
 
 </div>
+
 
 <script src="script.js"></script>
-
 </body>
 </html>
