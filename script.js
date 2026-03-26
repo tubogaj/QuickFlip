@@ -14,11 +14,9 @@ async function getGoldPrice() {
 
     live24k = (usd / 31.1035) * rate;
 
-    document.getElementById("livePrice").innerText =
-      "₱" + live24k.toFixed(2) + "/g";
+    livePrice.innerText = "₱" + live24k.toFixed(2) + "/g";
   } catch {
-    document.getElementById("livePrice").innerText =
-      "Fallback ₱10,000/g";
+    livePrice.innerText = "₱10,000/g (fallback)";
   }
 }
 
@@ -27,9 +25,9 @@ getGoldPrice();
 // ANALYZE
 function analyze() {
 
-let w = parseFloat(document.getElementById("weight").value);
-let p = parseFloat(document.getElementById("price").value);
-let purity = parseFloat(document.getElementById("karat").value);
+let w = parseFloat(weight.value);
+let p = parseFloat(price.value);
+let purity = parseFloat(karat.value);
 
 if (!w || !p) return;
 
@@ -40,34 +38,48 @@ let pawn = market * 0.85 * w;
 let flip = market * 0.95 * w;
 let full = market * w;
 
-let pawnProfit = pawn - p;
 let flipProfit = flip - p;
-let fullProfit = full - p;
-
-let pawnPct = (pawnProfit / p) * 100;
 let flipPct = (flipProfit / p) * 100;
-let fullPct = (fullProfit / p) * 100;
 
+// TRADE LEVELS
+let suggestedBuy = market * 0.90;
+let maxBuy = market * 0.95;
+let breakEven = perGram;
+let targetSell = market * 0.98;
+
+// DECISION ENGINE
+let ratio = perGram / market;
 let rating = "";
+let explanation = "";
 let color = "";
 
-if (perGram <= market * 0.80) {
+if (ratio <= 0.80) {
   rating = "STEAL 🔥";
   color = "good";
+  explanation = "You are entering significantly below market value. This is an elite deal with strong profit margin.";
 }
-else if (perGram <= market * 0.90) {
-  rating = "SWEET SPOT 💰";
+else if (ratio <= 0.90) {
+  rating = "STRONG BUY 💰";
   color = "good";
+  explanation = "You are buying below market. This is the ideal zone for consistent flipping profits.";
 }
-else if (perGram <= market * 0.98) {
-  rating = "TIGHT 😬";
+else if (ratio <= 0.98) {
+  rating = "MARGINAL ⚠️";
   color = "warn";
+  explanation = "Your margin is tight. Profit depends on execution.";
+}
+else if (ratio <= 1.05) {
+  rating = "HIGH RISK ❗";
+  color = "warn";
+  explanation = "You are near or above market. Profit is uncertain.";
 }
 else {
-  rating = "OVERPRICED ❌";
+  rating = "AVOID ❌";
   color = "bad";
+  explanation = "You are overpaying. This deal has negative edge.";
 }
 
+// SAVE
 lastDeal = {
   weight: w,
   price: p,
@@ -76,16 +88,33 @@ lastDeal = {
   rating: rating
 };
 
-document.getElementById("output").innerHTML = `
-<b>Market:</b> ₱${market.toFixed(2)}/g<br>
-<b>Your Entry:</b> ₱${perGram.toFixed(2)}/g<br><br>
+// SHOW RESULT
+resultCard.classList.remove("hidden");
 
-<b class="${color}">${rating}</b><br><br>
+resultCard.innerHTML = `
+<div class="result-title ${color}">${rating}</div>
 
-<b>💰 Breakdown</b><br>
-Pawn → ₱${pawn.toFixed(0)} (${pawnPct.toFixed(1)}%)<br>
-Flip → ₱${flip.toFixed(0)} (${flipPct.toFixed(1)}%)<br>
-Full → ₱${full.toFixed(0)} (${fullPct.toFixed(1)}%)<br>
+<div class="section">
+Market: ₱${market.toFixed(2)}/g<br>
+Your Entry: ₱${perGram.toFixed(2)}/g
+</div>
+
+<div class="section">${explanation}</div>
+
+<div class="section">
+<b>📊 Trade Levels</b><br><br>
+Suggested Buy: ₱${suggestedBuy.toFixed(2)}/g<br>
+Max Buy: ₱${maxBuy.toFixed(2)}/g<br>
+Break-even: ₱${breakEven.toFixed(2)}/g<br>
+Target Sell: ₱${targetSell.toFixed(2)}/g
+</div>
+
+<div class="section">
+<b>💰 Profit Breakdown</b><br><br>
+Pawn: ₱${pawn.toFixed(0)}<br>
+Quick Flip: ₱${flip.toFixed(0)} (${flipPct.toFixed(1)}%)<br>
+Full Market: ₱${full.toFixed(0)}
+</div>
 `;
 }
 
@@ -106,19 +135,13 @@ function saveDeal() {
       rating: lastDeal.rating
     })
   })
-  .then(res => res.text())
   .then(() => {
-    document.getElementById("output").innerHTML +=
-      "<br><span style='color:#4caf50'>Saved to cloud ✅</span>";
-
     saveLocal(lastDeal);
-  })
-  .catch(() => {
-    alert("Cloud save failed ❌");
+    resultCard.innerHTML += "<br><span style='color:#4caf50'>Saved to cloud ✅</span>";
   });
 }
 
-// LOCAL SAVE
+// LOCAL STORAGE
 function saveLocal(deal) {
   let deals = JSON.parse(localStorage.getItem("deals") || "[]");
   deals.push(deal);
@@ -126,7 +149,6 @@ function saveLocal(deal) {
   loadDeals();
 }
 
-// LOAD HISTORY
 function loadDeals() {
   let deals = JSON.parse(localStorage.getItem("deals") || "[]");
 
@@ -138,15 +160,15 @@ function loadDeals() {
 
     html += `
     <div class="deal">
-    ${d.weight}g | ₱${d.price}<br>
+    ${d.weight}g • ₱${d.price}<br>
     ${d.rating}<br>
     Profit: ₱${d.profit.toFixed(0)} (${d.pct.toFixed(1)}%)
     </div>
     `;
   });
 
-  document.getElementById("history").innerHTML = html;
-  document.getElementById("totalProfit").innerText = total.toFixed(0);
+  history.innerHTML = html;
+  totalProfit.innerText = total.toFixed(0);
 }
 
 loadDeals();
