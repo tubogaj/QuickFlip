@@ -1,42 +1,30 @@
-let live24k = 10000;
 let lastDeal = null;
 
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw8bIvE__qOXduEWgvvOKzzoYnA1PJTafXN7YmnyCAcOZ61XGTmO2EO2BJSyCL_1NGF/exec";
 
-// FETCH GOLD PRICE
-async function getGoldPrice() {
-  try {
-    let res = await fetch("https://api.metals.live/v1/spot/gold");
-    let data = await res.json();
+const purityMap = {
+  24: 0.999,
+  22: 0.916,
+  21: 0.875,
+  18: 0.750,
+  14: 0.585
+};
 
-    let usd = data[0].price;
-    let rate = 56;
-
-    live24k = (usd / 31.1035) * rate;
-
-    livePrice.innerText = "₱" + live24k.toFixed(2) + "/g";
-  } catch {
-    livePrice.innerText = "₱10,000/g (fallback)";
-  }
-}
-
-getGoldPrice();
-
-// ANALYZE
 function analyze() {
 
+let live24k = parseFloat(goldPrice.value);
 let w = parseFloat(weight.value);
 let p = parseFloat(price.value);
-let purity = parseFloat(karat.value);
+let k = parseInt(karat.value);
 
-if (!w || !p) return;
+if (!live24k || !w || !p) return;
 
+let purity = purityMap[k];
 let market = live24k * purity;
 let perGram = p / w;
 
 let pawn = market * 0.85 * w;
 let flip = market * 0.95 * w;
-let full = market * w;
 
 let flipProfit = flip - p;
 let flipPct = (flipProfit / p) * 100;
@@ -44,7 +32,6 @@ let flipPct = (flipProfit / p) * 100;
 // TRADE LEVELS
 let suggestedBuy = market * 0.90;
 let maxBuy = market * 0.95;
-let breakEven = perGram;
 let targetSell = market * 0.98;
 
 // DECISION ENGINE
@@ -54,32 +41,26 @@ let explanation = "";
 let color = "";
 
 if (ratio <= 0.80) {
-  rating = "STEAL 🔥";
+  rating = "STEAL";
   color = "good";
-  explanation = "You are entering significantly below market value. This is an elite deal with strong profit margin.";
+  explanation = "Strong entry. High margin and low risk.";
 }
 else if (ratio <= 0.90) {
-  rating = "STRONG BUY 💰";
+  rating = "STRONG BUY";
   color = "good";
-  explanation = "You are buying below market. This is the ideal zone for consistent flipping profits.";
+  explanation = "Ideal zone for consistent flipping profit.";
 }
 else if (ratio <= 0.98) {
-  rating = "MARGINAL ⚠️";
+  rating = "MARGINAL";
   color = "warn";
-  explanation = "Your margin is tight. Profit depends on execution.";
-}
-else if (ratio <= 1.05) {
-  rating = "HIGH RISK ❗";
-  color = "warn";
-  explanation = "You are near or above market. Profit is uncertain.";
+  explanation = "Tight margins. Needs good exit.";
 }
 else {
-  rating = "AVOID ❌";
+  rating = "AVOID";
   color = "bad";
-  explanation = "You are overpaying. This deal has negative edge.";
+  explanation = "Overpriced. High chance of loss.";
 }
 
-// SAVE
 lastDeal = {
   weight: w,
   price: p,
@@ -88,7 +69,6 @@ lastDeal = {
   rating: rating
 };
 
-// SHOW RESULT
 resultCard.classList.remove("hidden");
 
 resultCard.innerHTML = `
@@ -102,18 +82,15 @@ Your Entry: ₱${perGram.toFixed(2)}/g
 <div class="section">${explanation}</div>
 
 <div class="section">
-<b>📊 Trade Levels</b><br><br>
-Suggested Buy: ₱${suggestedBuy.toFixed(2)}/g<br>
+<b>Trade Levels</b><br>
+Buy Target: ₱${suggestedBuy.toFixed(2)}/g<br>
 Max Buy: ₱${maxBuy.toFixed(2)}/g<br>
-Break-even: ₱${breakEven.toFixed(2)}/g<br>
 Target Sell: ₱${targetSell.toFixed(2)}/g
 </div>
 
 <div class="section">
-<b>💰 Profit Breakdown</b><br><br>
-Pawn: ₱${pawn.toFixed(0)}<br>
-Quick Flip: ₱${flip.toFixed(0)} (${flipPct.toFixed(1)}%)<br>
-Full Market: ₱${full.toFixed(0)}
+<b>Profit</b><br>
+Flip: ₱${flip.toFixed(0)} (${flipPct.toFixed(1)}%)
 </div>
 `;
 }
@@ -127,48 +104,9 @@ function saveDeal() {
     headers: {
       "Content-Type": "text/plain;charset=utf-8"
     },
-    body: JSON.stringify({
-      weight: lastDeal.weight,
-      price: lastDeal.price,
-      profit: lastDeal.profit,
-      percent: lastDeal.pct,
-      rating: lastDeal.rating
-    })
+    body: JSON.stringify(lastDeal)
   })
   .then(() => {
-    saveLocal(lastDeal);
     resultCard.innerHTML += "<br><span style='color:#4caf50'>Saved to cloud ✅</span>";
   });
 }
-
-// LOCAL STORAGE
-function saveLocal(deal) {
-  let deals = JSON.parse(localStorage.getItem("deals") || "[]");
-  deals.push(deal);
-  localStorage.setItem("deals", JSON.stringify(deals));
-  loadDeals();
-}
-
-function loadDeals() {
-  let deals = JSON.parse(localStorage.getItem("deals") || "[]");
-
-  let total = 0;
-  let html = "";
-
-  deals.reverse().forEach(d => {
-    total += d.profit;
-
-    html += `
-    <div class="deal">
-    ${d.weight}g • ₱${d.price}<br>
-    ${d.rating}<br>
-    Profit: ₱${d.profit.toFixed(0)} (${d.pct.toFixed(1)}%)
-    </div>
-    `;
-  });
-
-  history.innerHTML = html;
-  totalProfit.innerText = total.toFixed(0);
-}
-
-loadDeals();
