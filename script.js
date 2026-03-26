@@ -43,12 +43,24 @@ function calculateGold() {
   const weight = +document.getElementById("weight").value;
   const asking = +document.getElementById("askingPrice").value;
   const ppg = +document.getElementById("pricePerGramInput").value;
-  const purity = +document.getElementById("purity").value;
+  const purityInput = document.getElementById("purity").value;
 
   if (!goldPrice24k || !weight) {
     document.getElementById("results").innerHTML = "";
     return;
   }
+
+  // ✅ PURITY MAP (up to 14K only)
+  const purityMap = {
+    "24K": 1,
+    "22K": 0.916,
+    "21K": 0.875,
+    "18K": 0.75,
+    "16K": 0.667,
+    "14K": 0.585
+  };
+
+  const purity = purityMap[purityInput] || 1;
 
   const currentGoldPrice = goldPrice24k * purity;
 
@@ -122,17 +134,17 @@ function calculateGold() {
     Profit: ₱${steal.profit.toFixed(0)} | (${steal.percent}%)
   `;
 
+  // ✅ FIXED PAYLOAD (NO .toFixed)
   lastDealData = {
     type: "gold",
-    goldPrice: currentGoldPrice.toFixed(2),
+    goldPrice: currentGoldPrice,
     weight: weight,
-    purity: purity,
-    soldPrice: totalCost.toFixed(0),
-    pricePerGram: buyPPG.toFixed(2),
+    purity: purityInput,   // keep label (18K, etc.)
+    soldPrice: totalCost,
+    pricePerGram: buyPPG,
     dealRating: label
   };
 }
-
 // ================= SAVE GOLD =================
 function saveDeal() {
   if (!lastDealData) return alert("No data");
