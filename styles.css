@@ -7,19 +7,18 @@ body {
 
 .container {
   display: flex;
-  transition: all 0.4s ease;
 }
 
 .left {
   flex: 1;
   padding: 30px;
-  transition: all 0.4s ease;
+  transition: all 0.3s ease;
 }
 
 .right {
   width: 420px;
   background: #111;
-  transition: all 0.4s ease;
+  transition: all 0.3s ease;
 }
 
 iframe {
@@ -29,10 +28,9 @@ iframe {
 }
 
 .title {
-  font-weight: 900;
   font-size: 32px;
+  font-weight: 900;
   color: gold;
-  letter-spacing: 1px;
 }
 
 .tabs {
@@ -44,8 +42,8 @@ iframe {
   padding: 10px 16px;
   background: gold;
   border: none;
-  cursor: pointer;
   font-weight: 700;
+  cursor: pointer;
 }
 
 .tab {
@@ -62,7 +60,6 @@ iframe {
 }
 
 input, select {
-  display: block;
   width: 100%;
   margin-top: 10px;
   padding: 12px;

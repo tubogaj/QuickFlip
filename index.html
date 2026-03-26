@@ -5,18 +5,14 @@
   <title>QuickFlip_</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- PREMIUM FONT -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <div class="container">
 
-  <!-- LEFT -->
-  <div class="left" id="leftPanel">
-
+  <div class="left">
     <h1 class="title">QuickFlip_</h1>
 
     <div class="tabs">
@@ -25,7 +21,7 @@
     </div>
 
     <!-- GOLD -->
-    <div id="gold" class="tab active fade">
+    <div id="gold" class="tab active">
       <input id="goldPrice" placeholder="Gold Price (24k)" type="number">
       <input id="weight" placeholder="Weight (g)" type="number">
       <input id="askingPrice" placeholder="Total Asking Price" type="number">
@@ -39,14 +35,13 @@
         <option value="0.585">14k</option>
       </select>
 
-      <button onclick="calculateGold()">Calculate</button>
       <button onclick="saveDeal()">Save Deal</button>
 
       <div id="results"></div>
     </div>
 
     <!-- LOANS -->
-    <div id="loan" class="tab fade">
+    <div id="loan" class="tab">
       <h3>Borrower</h3>
       <input id="name" placeholder="Name">
       <input id="address" placeholder="Address">
@@ -62,16 +57,14 @@
         <option>Monthly</option>
       </select>
 
-      <button onclick="generateLoan()">Calculate</button>
       <button onclick="saveLoan()">Save Loan</button>
       <button onclick="generatePDF()">Loan Agreement PDF</button>
 
       <div id="loanResult"></div>
     </div>
-
   </div>
 
-  <!-- RIGHT (GOLD PANEL) -->
+  <!-- GOLD PANEL -->
   <div class="right" id="goldPanel">
     <iframe src="https://goldpricez.com/ph/gram"></iframe>
   </div>

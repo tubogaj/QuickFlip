@@ -2,42 +2,35 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMdQUS_AVAxB2-Yk7RM
 
 let lastDealData = null;
 
-// TAB SWITCH WITH ANIMATION + RESIZE
+// TAB SWITCH
 function showTab(tab) {
-  document.querySelectorAll(".tab").forEach(t => {
-    t.classList.remove("active");
-  });
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById(tab).classList.add("active");
 
-  const selected = document.getElementById(tab);
-  selected.classList.add("active");
-
-  const goldPanel = document.getElementById("goldPanel");
+  const panel = document.getElementById("goldPanel");
 
   if (tab === "gold") {
-    goldPanel.style.display = "block";
-    goldPanel.style.width = "420px";
+    panel.style.display = "block";
+    panel.style.width = "420px";
   } else {
-    goldPanel.style.width = "0px";
-
-    setTimeout(() => {
-      goldPanel.style.display = "none";
-    }, 300);
+    panel.style.width = "0px";
+    setTimeout(() => panel.style.display = "none", 300);
   }
 }
 
-// ================= GOLD =================
+// ================= GOLD AUTO =================
 function calculateGold() {
   const goldPrice = +goldPrice.value;
   const weight = +weight.value;
   const asking = +askingPrice.value;
-  const ppgInput = +pricePerGramInput.value;
-  const purity = +purity.value;
+  const ppg = +pricePerGramInput.value;
+  const purityVal = +purity.value;
 
-  if (!goldPrice || !weight) return alert("Fill inputs");
+  if (!goldPrice || !weight) return;
 
-  const buyPPG = ppgInput || (asking / weight);
-  const totalCost = asking || (ppgInput * weight);
-  const marketPPG = goldPrice * purity;
+  const buyPPG = ppg || (asking / weight);
+  const totalCost = asking || (ppg * weight);
+  const marketPPG = goldPrice * purityVal;
 
   const percent = (buyPPG / marketPPG) * 100;
 
@@ -78,33 +71,37 @@ function calculateGold() {
     type: "gold",
     goldPrice,
     weight,
-    purity,
+    purity: purityVal,
     soldPrice: totalCost,
     pricePerGram: marketPPG,
     dealRating: label
   };
 }
 
+// AUTO TRIGGERS GOLD
+["goldPrice","weight","askingPrice","pricePerGramInput","purity"]
+.forEach(id => document.getElementById(id).addEventListener("input", calculateGold));
+
 // SAVE GOLD
 function saveDeal() {
-  if (!lastDealData) return alert("Calculate first");
+  if (!lastDealData) return alert("No data");
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    body: JSON.stringify(lastDealData),
-    headers: { "Content-Type": "text/plain" }
-  }).then(() => alert("Saved ✅"));
+  fetch(SCRIPT_URL,{
+    method:"POST",
+    body:JSON.stringify(lastDealData),
+    headers:{ "Content-Type":"text/plain" }
+  }).then(()=>alert("Saved ✅"));
 }
 
-// ================= LOANS =================
+// ================= LOANS AUTO =================
 function generateLoan() {
-  const principal = +principal.value;
+  const principalVal = +principal.value;
   const term = loanTerm.value;
 
-  if (!principal) return alert("Enter principal");
+  if (!principalVal) return;
 
-  const interest = principal * 0.20;
-  const total = principal + interest;
+  const interest = principalVal * 0.20;
+  const total = principalVal + interest;
 
   let days = 30;
   if (term === "Weekly") days = 7;
@@ -115,33 +112,47 @@ function generateLoan() {
 
   loanResult.innerHTML = `
     <h3>Loan Breakdown</h3>
-    Capital: ₱${principal}<br>
+    Capital: ₱${principalVal}<br>
     Interest: ₱${interest.toFixed(0)} | 20%<br>
     Due Date: ${due.toLocaleDateString()}<br>
     Amount Due: ₱${total.toFixed(0)}
   `;
 
   window.loanData = {
-    type: "loan",
-    name: name.value,
-    address: address.value,
-    idType: idType.value,
-    idNumber: idNumber.value,
-    principal,
+    type:"loan",
+    name:name.value,
+    address:address.value,
+    idType:idType.value,
+    idNumber:idNumber.value,
+    principal:principalVal,
     interest,
-    profit: interest,
-    loanTerm: term,
-    dueDate: due.toISOString()
+    profit:interest,
+    loanTerm:term,
+    dueDate:due.toISOString()
   };
 }
 
+// AUTO TRIGGERS LOAN
+["principal","loanTerm"].forEach(id =>
+  document.getElementById(id).addEventListener("input", generateLoan)
+);
+
 // SAVE LOAN
 function saveLoan() {
-  if (!window.loanData) return alert("Calculate loan first");
+  if (!window.loanData) return alert("No loan");
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    body: JSON.stringify(window.loanData),
-    headers: { "Content-Type": "text/plain" }
-  }).then(() => alert("Loan Saved ✅"));
+  fetch(SCRIPT_URL,{
+    method:"POST",
+    body:JSON.stringify(window.loanData),
+    headers:{ "Content-Type":"text/plain" }
+  }).then(()=>alert("Loan Saved ✅"));
+}
+
+// PDF
+async function generatePDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.text(`Loan Agreement\n\nBorrower: ${name.value}\nAmount: ₱${principal.value}\nInterest: 20%`,10,10);
+  doc.save("Loan.pdf");
 }
