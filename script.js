@@ -10,7 +10,7 @@ async function fetchRate() {
     const data = await res.json();
     phpToUsd = data.rates.USD;
   } catch (e) {
-    console.log("FX fallback used");
+    console.log("Using fallback FX rate");
   }
 }
 fetchRate();
@@ -48,7 +48,7 @@ function calculate() {
     return;
   }
 
-  // MARKET PRICE BASED ON PURITY
+  // PURITY LABEL
   const purityLabelMap = {
     0.999: "24k",
     0.916: "22k",
@@ -58,13 +58,14 @@ function calculate() {
   };
 
   const selectedPurityLabel = purityLabelMap[purity] || "";
+
+  // MARKET PRICE
   const marketPPG = goldPrice * purity;
 
-  // SELL LEVELS (PH MARKET REALISTIC)
+  // SELL LEVELS (PH REALISTIC)
   const quickPPG = marketPPG * 0.95;
   const goodPPG = marketPPG;
-  const stealLowPPG = marketPPG * 1.05;
-  const stealHighPPG = marketPPG * 1.10;
+  const stealPPG = marketPPG * 1.075;
 
   function compute(ppg) {
     const selling = ppg * weight;
@@ -82,14 +83,32 @@ function calculate() {
 
   const quick = compute(quickPPG);
   const good = compute(goodPPG);
-  const stealMin = compute(stealLowPPG);
-  const stealMax = compute(stealHighPPG);
+  const steal = compute(stealPPG);
 
-  // DEAL INDICATOR
-  let emoji = "✅";
-  if (quick.profit < 0) emoji = "❌";
-  else if (quick.percent < 3) emoji = "⚠️";
-  else if (stealMax.percent >= 12) emoji = "🔥";
+  // MARKET % INDICATOR
+  const buyPercent = (buyPPG / marketPPG) * 100;
+
+  let marketLabel = "";
+  let marketColor = "";
+  let decisionText = "";
+
+  if (buyPercent > 100) {
+    marketLabel = "Above market";
+    marketColor = "red";
+    decisionText = "❌ Bad deal";
+  } else if (buyPercent >= 95) {
+    marketLabel = "Near market";
+    marketColor = "orange";
+    decisionText = "⚠️ Tight deal";
+  } else if (buyPercent >= 85) {
+    marketLabel = "Below market";
+    marketColor = "lightgreen";
+    decisionText = "✅ Good Deal";
+  } else {
+    marketLabel = "Deep value";
+    marketColor = "gold";
+    decisionText = "🔥 Steal Deal!";
+  }
 
   // FORMATTERS
   function php(val) {
@@ -100,15 +119,23 @@ function calculate() {
     return `$${val.toFixed(0)}`;
   }
 
-  // RESULT OUTPUT
+  // OUTPUT
   document.getElementById("results").innerHTML = `
     <h3>Result</h3>
 
     <p><strong>Price per gram (buy):</strong> ₱${buyPPG.toFixed(2)}</p>
     <p><strong>Market price (${selectedPurityLabel}):</strong> ₱${marketPPG.toFixed(2)}</p>
-    <p><strong>Weight:</strong> ${weight}g</p>
 
-    <p style="font-size:22px">${emoji}</p>
+    <p>
+    <strong>Market position:</strong> 
+    <span style="color:${marketColor}">
+    ${buyPercent.toFixed(1)}% of market (${marketLabel})
+    </span>
+    </p>
+
+    <p style="font-size:20px; font-weight:bold;">${decisionText}</p>
+
+    <p><strong>Weight:</strong> ${weight}g</p>
 
     <hr>
 
@@ -126,12 +153,9 @@ function calculate() {
 
     <p><strong>Steal</strong><br>
     Capital: ${php(totalCost)} (${usd(totalCost * phpToUsd)})<br>
-    Selling price: ${php(stealMin.selling)} - ${php(stealMax.selling)}<br>
-    (${usd(stealMin.usdSelling)} - ${usd(stealMax.usdSelling)})<br>
-    Price per gram (sell): ₱${stealLowPPG.toFixed(2)} - ₱${stealHighPPG.toFixed(2)}<br>
-    Profit: ${php(stealMin.profit)} - ${php(stealMax.profit)}<br>
-    (${usd(stealMin.usdProfit)} - ${usd(stealMax.usdProfit)}) | 
-    (${stealMin.percent.toFixed(1)}% - ${stealMax.percent.toFixed(1)}%)</p>
+    Selling price: ${php(steal.selling)} (${usd(steal.usdSelling)})<br>
+    Price per gram (sell): ₱${stealPPG.toFixed(2)}<br>
+    Profit: ${php(steal.profit)} (${usd(steal.usdProfit)}) | (${steal.percent.toFixed(1)}%)</p>
   `;
 
   // SAVE DATA
@@ -141,7 +165,7 @@ function calculate() {
     purity,
     soldPrice: good.selling.toFixed(0),
     pricePerGram: buyPPG.toFixed(2),
-    dealRanking: emoji
+    dealRanking: decisionText
   };
 }
 
@@ -192,7 +216,7 @@ function loadDashboard() {
         capital += capitalUsed;
         profit += sold - capitalUsed;
 
-        if (rank === "🔥" || rank === "✅") wins++;
+        if (rank.includes("Good") || rank.includes("Steal")) wins++;
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
