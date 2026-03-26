@@ -155,15 +155,27 @@ function calculateGold() {
 
 // ================= SAVE GOLD =================
 function saveDeal() {
-  if (!lastDealData) return alert("No data");
+  if (!lastDealData) {
+    alert("No data - calculate first");
+    return;
+  }
 
   fetch(SCRIPT_URL, {
     method: "POST",
     body: JSON.stringify(lastDealData),
-    headers: { "Content-Type": "text/plain;charset=utf-8" }
+    headers: {
+      "Content-Type": "application/json"
+    }
   })
-  .then(() => alert("Saved ✅"))
-  .catch(() => alert("Error ❌"));
+  .then(res => res.text())
+  .then(data => {
+    console.log("Server response:", data);
+    alert("Saved to sheet ✅");
+  })
+  .catch(err => {
+    console.error("Save error:", err);
+    alert("Error saving ❌");
+  });
 }
 
 // ================= LOANS =================
