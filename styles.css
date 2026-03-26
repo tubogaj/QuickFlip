@@ -1,52 +1,38 @@
 body {
-  margin: 0;
   font-family: Arial;
   background: #0a0a0a;
   color: white;
+  margin: 0;
+  padding: 20px;
 }
 
-.container {
+.tabs {
   display: flex;
-  flex-wrap: wrap;
-}
-
-.left-panel {
-  flex: 1;
-  padding: 30px;
-}
-
-.right-panel {
-  width: 400px;
-  background: #111;
-}
-
-h1 {
-  color: gold;
-}
-
-.dashboard {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   margin-bottom: 20px;
 }
 
-.card {
-  background: #111;
-  padding: 15px;
-  border: 1px solid gold;
-  border-radius: 10px;
-  text-align: center;
+.tabs button {
+  padding: 10px;
+  background: gold;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
 }
 
-.form {
-  display: flex;
-  flex-direction: column;
+.tab {
+  display: none;
+}
+
+.tab.active {
+  display: block;
 }
 
 input, select {
+  display: block;
   margin-top: 10px;
-  padding: 10px;
+  padding: 12px;
+  width: 100%;
   background: #1a1a1a;
   border: 1px solid #333;
   color: white;
@@ -58,37 +44,12 @@ button {
   background: gold;
   border: none;
   font-weight: bold;
+  cursor: pointer;
 }
 
-.results {
+#results, #loanResult {
   margin-top: 20px;
   background: #111;
   padding: 15px;
   border-radius: 10px;
-}
-
-table {
-  width: 100%;
-  margin-top: 20px;
-}
-
-td, th {
-  padding: 10px;
-  border-bottom: 1px solid #333;
-  text-align: center;
-}
-
-iframe {
-  width: 100%;
-  height: 100vh;
-  border: none;
-}
-
-@media (max-width: 900px) {
-  .container {
-    flex-direction: column;
-  }
-  .right-panel {
-    width: 100%;
-  }
 }

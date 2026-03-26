@@ -2,33 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>QuickFlip Dashboard</title>
+  <title>QuickFlip System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<div class="container">
+<div class="tabs">
+  <button onclick="showTab('goldTab')">Gold</button>
+  <button onclick="showTab('loanTab')">Loans</button>
+</div>
 
-  <div class="left-panel">
-    <h1>QuickFlip</h1>
-    <p class="subtitle">Gold Dashboard</p>
+<!-- GOLD TAB -->
+<div id="goldTab" class="tab active">
+  <h1>Gold Calculator</h1>
 
-    <!-- DASHBOARD -->
-    <div class="dashboard">
-      <div class="card">Deals: <span id="totalDeals">0</span></div>
-      <div class="card">Capital: ₱<span id="totalCapital">0</span></div>
-      <div class="card">Profit: ₱<span id="totalProfit">0</span></div>
-      <div class="card">Win Rate: <span id="winRate">0</span>%</div>
-    </div>
-
-    <!-- INPUT -->
-<div class="form">
-  <input type="number" id="goldPrice" placeholder="Gold Price (24k)">
-  <input type="number" id="weight" placeholder="Weight (grams)">
-
-  <input type="number" id="askingPrice" placeholder="Total Asking Price (₱)">
-  <input type="number" id="pricePerGramInput" placeholder="Price per gram (₱)">
+  <input id="goldPrice" type="number" placeholder="Gold Price (24k)">
+  <input id="weight" type="number" placeholder="Weight">
+  <input id="askingPrice" type="number" placeholder="Total Asking Price">
+  <input id="pricePerGramInput" type="number" placeholder="Price per gram">
 
   <select id="purity">
     <option value="0.999">24k</option>
@@ -40,32 +32,38 @@
 
   <button id="calcBtn">Calculate</button>
   <button id="saveBtn">Save Deal</button>
+
+  <div id="results"></div>
 </div>
 
-    <div class="results" id="results"></div>
+<!-- LOANS TAB -->
+<div id="loanTab" class="tab">
+  <h1>Loan System</h1>
 
-    <!-- TABLE -->
-    <table id="historyTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Gold</th>
-          <th>Weight</th>
-          <th>PPG</th>
-          <th>Rank</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <h3>Borrower</h3>
+  <input id="name" placeholder="Name">
+  <input id="address" placeholder="Address">
+  <input id="idType" placeholder="ID Type">
+  <input id="idNumber" placeholder="ID Number">
 
-  </div>
+  <h3>Loan</h3>
+  <input id="principal" type="number" placeholder="Principal">
 
-  <div class="right-panel">
-    <iframe src="https://goldpricez.com/ph/gram"></iframe>
-  </div>
+  <select id="loanTerm">
+    <option>Weekly</option>
+    <option>Bi-Monthly</option>
+    <option>Monthly</option>
+  </select>
 
+  <button onclick="generateLoan()">Calculate Loan</button>
+  <button onclick="saveLoan()">Save Loan</button>
+  <button onclick="generatePDF()">Generate Loan Agreement</button>
+
+  <div id="loanResult"></div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="script.js"></script>
+
 </body>
 </html>

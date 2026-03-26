@@ -1,182 +1,163 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwCSrZ1TGJIvhxDL_S2YRtaWUgFt-0TdR19v-fFQ7-eVtSs9xFeEX1B25OAoYL0bCJa/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMdQUS_AVAxB2-Yk7RMznO_3SDGRHKy0xk-TcITObVVevl8tyhFtVqIWpVE9WVqzyp/exec";
 
 let lastDealData = null;
-let phpToUsd = 1 / 56;
+let phpToUsd = 1/56;
 
-// FETCH LIVE FX RATE
-async function fetchRate() {
-  try {
-    const res = await fetch("https://api.exchangerate-api.com/v4/latest/PHP");
-    const data = await res.json();
-    phpToUsd = data.rates.USD;
-  } catch {
-    console.log("Using fallback FX");
-  }
+// TAB SWITCH
+function showTab(tab) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById(tab).classList.add("active");
 }
-fetchRate();
 
-// BUTTONS
+// FX RATE
+fetch("https://api.exchangerate-api.com/v4/latest/PHP")
+  .then(res => res.json())
+  .then(data => phpToUsd = data.rates.USD);
+
+// GOLD BUTTONS
 document.getElementById("calcBtn").addEventListener("click", calculate);
 document.getElementById("saveBtn").addEventListener("click", saveDeal);
 
+// ================= GOLD =================
 function calculate() {
-  const goldPrice = +document.getElementById("goldPrice").value;
-  const weight = +document.getElementById("weight").value;
-  let asking = +document.getElementById("askingPrice").value;
-  let ppgInput = +document.getElementById("pricePerGramInput").value;
-  const purity = +document.getElementById("purity").value;
+  const goldPrice = +goldPriceInput.value;
+  const weight = +weightInput.value;
+  const asking = +askingPrice.value;
+  const ppgInput = +pricePerGramInput.value;
+  const purity = +purity.value;
 
-  if (!goldPrice || !weight) {
-    alert("Fill gold price and weight");
-    return;
-  }
+  let buyPPG = ppgInput || (asking / weight);
+  let totalCost = asking || (ppgInput * weight);
 
-  // FLEX INPUT LOGIC
-  let buyPPG, totalCost;
-
-  if (ppgInput && !asking) {
-    buyPPG = ppgInput;
-    totalCost = buyPPG * weight;
-  } else if (!ppgInput && asking) {
-    totalCost = asking;
-    buyPPG = asking / weight;
-  } else if (ppgInput && asking) {
-    buyPPG = ppgInput;
-    totalCost = asking;
-  } else {
-    alert("Enter asking price or price per gram");
-    return;
-  }
-
-  // PURITY LABEL
-  const purityLabelMap = {
-    0.999: "24k",
-    0.916: "22k",
-    0.875: "21k",
-    0.750: "18k",
-    0.585: "14k"
-  };
-
-  const selectedPurityLabel = purityLabelMap[purity] || "";
-
-  // MARKET PRICE (BASED ON PURITY)
   const marketPPG = goldPrice * purity;
 
-  // ROI TARGETS
-  const quickROI = 0.03;
-  const goodROI = 0.065;
-  const stealROI = 0.10;
+  const buyPercent = (buyPPG / marketPPG) * 100;
 
-  function computeROI(roi) {
-    const selling = totalCost * (1 + roi);
-    const profit = selling - totalCost;
-    const percent = roi * 100;
-    const ppg = selling / weight;
+  let decision = "";
+  let color = "";
 
+  if (buyPercent > 100) { decision = "❌ Bad Deal"; color="red"; }
+  else if (buyPercent >= 95) { decision = "⚠️ Risky Deal"; color="orange"; }
+  else if (buyPercent >= 85) { decision = "✅ Good Deal"; color="lightgreen"; }
+  else { decision = "🔥 Steal Deal!"; color="gold"; }
+
+  function computeROI(r){
+    const selling = totalCost*(1+r);
     return {
       selling,
-      profit,
-      percent,
-      ppg,
-      usdSelling: selling * phpToUsd,
-      usdProfit: profit * phpToUsd
+      profit: selling-totalCost,
+      percent: r*100,
+      ppg: selling/weight
     };
   }
 
-  const quick = computeROI(quickROI);
-  const good = computeROI(goodROI);
-  const steal = computeROI(stealROI);
+  const quick = computeROI(0.03);
+  const good = computeROI(0.065);
+  const steal = computeROI(0.10);
 
-  // MARKET POSITION
-  const buyPercent = (buyPPG / marketPPG) * 100;
+  results.innerHTML = `
+  <h3>${decision}</h3>
+  Market: ₱${marketPPG.toFixed(2)}<br>
+  Position: ${buyPercent.toFixed(1)}%
 
-  let decisionText = "";
-  let color = "";
+  <hr>
 
-  if (buyPercent > 100) {
-    decisionText = "❌ Bad Deal";
-    color = "red";
-  } else if (buyPercent >= 95) {
-    decisionText = "⚠️ Risky Deal";
-    color = "orange";
-  } else if (buyPercent >= 85) {
-    decisionText = "✅ Good Deal";
-    color = "lightgreen";
-  } else {
-    decisionText = "🔥 Steal Deal!";
-    color = "gold";
-  }
+  Quick Flip<br>
+  ₱${quick.selling.toFixed(0)} | ₱${quick.profit.toFixed(0)} (${quick.percent}%)
 
-  // FORMATTERS
-  function php(val) {
-    return `₱${val.toFixed(0)}`;
-  }
+  <br><br>
 
-  function usd(val) {
-    return `$${val.toFixed(0)}`;
-  }
+  Good Deal<br>
+  ₱${good.selling.toFixed(0)} | ₱${good.profit.toFixed(0)} (${good.percent}%)
 
-  // OUTPUT
-  document.getElementById("results").innerHTML = `
-    <h3>Result</h3>
+  <br><br>
 
-    <p><strong>Price per gram (buy):</strong> ₱${buyPPG.toFixed(2)}</p>
-    <p><strong>Market price (${selectedPurityLabel}):</strong> ₱${marketPPG.toFixed(2)}</p>
-
-    <p style="color:${color}">
-      ${buyPercent.toFixed(1)}% of market
-    </p>
-
-    <p style="font-size:20px;"><strong>${decisionText}</strong></p>
-
-    <p><strong>Weight:</strong> ${weight}g</p>
-
-    <hr>
-
-    <p><strong>Quick Flip (2–4%)</strong><br>
-    Capital: ${php(totalCost)} (${usd(totalCost * phpToUsd)})<br>
-    Selling price: ${php(quick.selling)} (${usd(quick.usdSelling)})<br>
-    Price per gram (sell): ₱${quick.ppg.toFixed(2)}<br>
-    Profit: ${php(quick.profit)} (${usd(quick.usdProfit)}) | (${quick.percent.toFixed(1)}%)</p>
-
-    <p><strong>Good Deal (5–8%)</strong><br>
-    Capital: ${php(totalCost)} (${usd(totalCost * phpToUsd)})<br>
-    Selling price: ${php(good.selling)} (${usd(good.usdSelling)})<br>
-    Price per gram (sell): ₱${good.ppg.toFixed(2)}<br>
-    Profit: ${php(good.profit)} (${usd(good.usdProfit)}) | (${good.percent.toFixed(1)}%)</p>
-
-    <p><strong>Steal (10%)</strong><br>
-    Capital: ${php(totalCost)} (${usd(totalCost * phpToUsd)})<br>
-    Selling price: ${php(steal.selling)} (${usd(steal.usdSelling)})<br>
-    Price per gram (sell): ₱${steal.ppg.toFixed(2)}<br>
-    Profit: ${php(steal.profit)} (${usd(steal.usdProfit)}) | (${steal.percent.toFixed(1)}%)</p>
+  Steal<br>
+  ₱${steal.selling.toFixed(0)} | ₱${steal.profit.toFixed(0)} (${steal.percent}%)
   `;
 
-  // SAVE DATA (MATCHES YOUR SHEET EXACTLY)
   lastDealData = {
-    goldPrice: goldPrice,                  // 24k price
-    weight: weight,
-    purity: selectedPurityLabel,
-    soldPrice: totalCost.toFixed(0),       // TOTAL CAPITAL
-    pricePerGram: marketPPG.toFixed(2),    // MARKET BASED ON PURITY
-    dealRating: decisionText
+    type:"gold",
+    goldPrice,
+    weight,
+    purity,
+    soldPrice: totalCost,
+    pricePerGram: marketPPG,
+    dealRating: decision
   };
 }
 
-// SAVE FUNCTION
-function saveDeal() {
-  if (!lastDealData) {
-    alert("Calculate first");
-    return;
-  }
+function saveDeal(){
+  fetch(SCRIPT_URL,{
+    method:"POST",
+    body:JSON.stringify(lastDealData),
+    headers:{ "Content-Type":"text/plain" }
+  }).then(()=>alert("Saved ✅"));
+}
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    body: JSON.stringify(lastDealData),
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    }
-  })
-  .then(() => alert("Saved ✅"))
-  .catch(() => alert("Error ❌"));
+// ================= LOANS =================
+function generateLoan(){
+  const principal = +principalInput.value;
+  const term = loanTerm.value;
+
+  const interest = principal * 0.20;
+  const total = principal + interest;
+
+  let days = 30;
+  if(term==="Weekly") days=7;
+  if(term==="Bi-Monthly") days=15;
+
+  const today = new Date();
+  const due = new Date(today);
+  due.setDate(today.getDate()+days);
+
+  loanResult.innerHTML = `
+  Principal: ₱${principal}<br>
+  Interest: ₱${interest}<br>
+  Total: ₱${total}<br>
+  Due: ${due.toLocaleDateString()}
+  `;
+
+  window.loanData = {
+    type:"loan",
+    name: name.value,
+    address: address.value,
+    idType: idType.value,
+    idNumber: idNumber.value,
+    principal,
+    interest,
+    profit: interest,
+    loanTerm: term,
+    dueDate: due.toISOString()
+  };
+}
+
+function saveLoan(){
+  fetch(SCRIPT_URL,{
+    method:"POST",
+    body:JSON.stringify(window.loanData),
+    headers:{ "Content-Type":"text/plain" }
+  }).then(()=>alert("Loan Saved ✅"));
+}
+
+// ================= PDF =================
+async function generatePDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.text(`
+LOAN AGREEMENT
+
+Borrower: ${name.value}
+Address: ${address.value}
+
+Principal: ₱${principal.value}
+Interest: 20%
+
+Penalty: ₱100/day late
+
+Signature: __________
+  `,10,10);
+
+  doc.save("Loan.pdf");
 }
