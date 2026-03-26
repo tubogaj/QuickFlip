@@ -20,22 +20,37 @@ function showTab(tab) {
 
 // ================= GOLD =================
 function calculateGold() {
-  const goldPrice = +document.getElementById("goldPrice").value;
+  const goldPrice24k = +document.getElementById("goldPrice").value;
   const weight = +document.getElementById("weight").value;
   const asking = +document.getElementById("askingPrice").value;
   const ppg = +document.getElementById("pricePerGramInput").value;
-  const purityVal = +document.getElementById("purity").value;
+  const purity = +document.getElementById("purity").value;
 
-  if (!goldPrice || !weight) {
+  if (!goldPrice24k || !weight) {
     document.getElementById("results").innerHTML = "";
     return;
   }
 
-  const buyPPG = ppg || (asking / weight);
-  const totalCost = asking || (ppg * weight);
-  const marketPPG = goldPrice * purityVal;
+  // ✅ CURRENT GOLD PRICE BASED ON PURITY
+  const currentGoldPrice = goldPrice24k * purity;
 
-  const percent = (buyPPG / marketPPG) * 100;
+  // ✅ FLEX INPUT LOGIC
+  let buyPPG, totalCost;
+
+  if (ppg && !asking) {
+    buyPPG = ppg;
+    totalCost = ppg * weight;
+  } else if (!ppg && asking) {
+    totalCost = asking;
+    buyPPG = asking / weight;
+  } else if (ppg && asking) {
+    buyPPG = ppg;
+    totalCost = asking;
+  } else {
+    return;
+  }
+
+  const percent = (buyPPG / currentGoldPrice) * 100;
 
   let label = "";
   if (percent > 100) label = "❌ Bad Deal";
@@ -43,45 +58,69 @@ function calculateGold() {
   else if (percent >= 85) label = "✅ Good Deal";
   else label = "🔥 Steal Deal!";
 
-  function roi(r) {
-    const sell = totalCost * (1 + r);
+  function computeROI(roi) {
+    const sellTotal = totalCost * (1 + roi);
+    const sellPPG = sellTotal / weight;
+    const profit = sellTotal - totalCost;
+
     return {
-      sell,
-      profit: sell - totalCost,
-      percent: r * 100
+      sellTotal,
+      sellPPG,
+      profit,
+      percent: roi * 100
     };
   }
 
-  const quick = roi(0.03);
-  const good = roi(0.065);
-  const steal = roi(0.10);
+  const quick = computeROI(0.03);
+  const good = computeROI(0.065);
+  const steal = computeROI(0.10);
 
   document.getElementById("results").innerHTML = `
     <h3>${label}</h3>
-    Market: ₱${marketPPG.toFixed(2)}<br>
-    Position: ${percent.toFixed(1)}%
+
+    <strong>Current Gold Price:</strong> ₱${currentGoldPrice.toFixed(2)}<br>
+    <strong>Asking Price (buy):</strong> ₱${totalCost.toFixed(0)}<br>
+    <strong>Price per gram (buy):</strong> ₱${buyPPG.toFixed(2)}<br>
+    <strong>Weight:</strong> ${weight}g
 
     <hr>
 
-    Quick Flip: ₱${quick.sell.toFixed(0)} | ₱${quick.profit.toFixed(0)} (${quick.percent}%)
+    <strong>Quick Flip (2–4%)</strong><br>
+    Current Gold Price: ₱${currentGoldPrice.toFixed(2)}<br>
+    Selling price (sell): ₱${quick.sellTotal.toFixed(0)}<br>
+    Price per gram (sell): ₱${quick.sellPPG.toFixed(2)}<br>
+    Profit: ₱${quick.profit.toFixed(0)} | (${quick.percent}%)
+
     <br><br>
-    Good Deal: ₱${good.sell.toFixed(0)} | ₱${good.profit.toFixed(0)} (${good.percent}%)
+
+    <strong>Good Deal (5–8%)</strong><br>
+    Current Gold Price: ₱${currentGoldPrice.toFixed(2)}<br>
+    Selling price (sell): ₱${good.sellTotal.toFixed(0)}<br>
+    Price per gram (sell): ₱${good.sellPPG.toFixed(2)}<br>
+    Profit: ₱${good.profit.toFixed(0)} | (${good.percent}%)
+
     <br><br>
-    Steal: ₱${steal.sell.toFixed(0)} | ₱${steal.profit.toFixed(0)} (${steal.percent}%)
+
+    <strong>Steal (10%)</strong><br>
+    Current Gold Price: ₱${currentGoldPrice.toFixed(2)}<br>
+    Selling price (sell): ₱${steal.sellTotal.toFixed(0)}<br>
+    Price per gram (sell): ₱${steal.sellPPG.toFixed(2)}<br>
+    Profit: ₱${steal.profit.toFixed(0)} | (${steal.percent}%)
   `;
 
+  // ✅ FIXED SAVE DATA (MATCHES YOUR SHEET)
   lastDealData = {
     type: "gold",
-    goldPrice,
-    weight,
-    purity: purityVal,
-    soldPrice: totalCost,
-    pricePerGram: marketPPG,
+    goldPrice: currentGoldPrice.toFixed(2), // current gold price
+    weight: weight,
+    purity: purity,
+    soldPrice: totalCost.toFixed(0), // asking price
+    pricePerGram: buyPPG.toFixed(2),
     dealRating: label
   };
 }
 
-// AUTO GOLD
+// AUTO TRIGGER GOLD
 ["goldPrice","weight","askingPrice","pricePerGramInput","purity"]
 .forEach(id => {
   document.getElementById(id).addEventListener("input", calculateGold);
@@ -100,30 +139,42 @@ function saveDeal() {
 
 // ================= LOANS =================
 function generateLoan() {
-  const principalVal = +document.getElementById("principal").value;
+  const principal = +document.getElementById("principal").value;
   const term = document.getElementById("loanTerm").value;
 
-  if (!principalVal) {
+  if (!principal) {
     document.getElementById("loanResult").innerHTML = "";
     return;
   }
 
-  const interest = principalVal * 0.20;
-  const total = principalVal + interest;
+  const interest = principal * 0.20;
+  const total = principal + interest;
 
-  let days = 30;
-  if (term === "Weekly") days = 7;
-  if (term === "Bi-Monthly") days = 15;
+  let interval = 30;
+  if (term === "Weekly") interval = 7;
+  if (term === "Bi-Monthly") interval = 15;
 
-  const due = new Date();
-  due.setDate(due.getDate() + days);
+  const today = new Date();
+  let dates = [];
+  let temp = new Date(today);
+
+  // ✅ GENERATE MULTIPLE DUE DATES (WITHIN 30 DAYS)
+  while (true) {
+    temp = new Date(temp);
+    temp.setDate(temp.getDate() + interval);
+
+    if ((temp - today) / (1000 * 60 * 60 * 24) > 30) break;
+
+    dates.push(temp.toLocaleDateString());
+  }
 
   document.getElementById("loanResult").innerHTML = `
     <h3>Loan Breakdown</h3>
-    Capital: ₱${principalVal}<br>
+    Capital: ₱${principal}<br>
     Interest: ₱${interest.toFixed(0)} | 20%<br>
-    Due Date: ${due.toLocaleDateString()}<br>
-    Amount Due: ₱${total.toFixed(0)}
+    Amount Due: ₱${total.toFixed(0)}<br>
+    <strong>Due Dates:</strong><br>
+    ${dates.join("<br>")}
   `;
 
   window.loanData = {
@@ -132,16 +183,17 @@ function generateLoan() {
     address:document.getElementById("address").value,
     idType:document.getElementById("idType").value,
     idNumber:document.getElementById("idNumber").value,
-    principal:principalVal,
+    principal,
     interest,
     profit:interest,
     loanTerm:term,
-    dueDate:due.toISOString()
+    dueDate:dates.join(", ")
   };
 }
 
-// AUTO LOAN
-["principal","loanTerm"].forEach(id => {
+// AUTO TRIGGER LOANS
+["principal","loanTerm"]
+.forEach(id => {
   document.getElementById(id).addEventListener("input", generateLoan);
 });
 
@@ -154,14 +206,4 @@ function saveLoan() {
     body:JSON.stringify(window.loanData),
     headers:{ "Content-Type":"text/plain" }
   }).then(()=>alert("Loan Saved ✅"));
-}
-
-// ================= PDF =================
-async function generatePDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  doc.text(`Loan Agreement\n\nBorrower: ${document.getElementById("name").value}\nAmount: ₱${document.getElementById("principal").value}\nInterest: 20%`,10,10);
-
-  doc.save("Loan.pdf");
 }
