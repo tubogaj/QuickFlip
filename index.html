@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gold Business System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f0f0f;
+      color: white;
+      padding: 15px;
+    }
+
+    h2, h3 {
+      text-align: center;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+    }
+
+    input {
+      background: #1c1c1c;
+      color: white;
+    }
+
+    button {
+      background: gold;
+      font-weight: bold;
+    }
+
+    .card {
+      background: #1c1c1c;
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 10px;
+    }
+
+    .green { color: #00ff88; }
+    .red { color: #ff4d4d; }
+    .yellow { color: #ffd700; }
+
+    .client {
+      background: #222;
+      padding: 10px;
+      margin-top: 8px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>💰 Gold Business System</h2>
+
+<div class="card">
+  <h3>📡 Gold Price</h3>
+  <button onclick="fetchGold()">Fetch Live Price</button>
+  <div id="livePrice">Not loaded</div>
+
+  <input type="number" id="market" placeholder="Manual price ₱/g">
+</div>
+
+<div class="card">
+  <h3>🔍 Flip Calculator</h3>
+
+  <input type="number" id="weight" placeholder="Weight (g)">
+  <input type="number" id="buy" placeholder="Total Buy ₱">
+  <input type="number" id="sell" placeholder="Sell per gram ₱">
+
+  <button onclick="analyze()">Analyze</button>
+  <div id="flipResult"></div>
+</div>
+
+<div class="card">
+  <h3>🏦 Add Client (Utang)</h3>
+
+  <input type="text" id="name" placeholder="Client Name">
+  <input type="number" id="capital" placeholder="Capital ₱">
+  <input type="number" id="interest" placeholder="Interest %" value="20">
+  <input type="number" id="months" placeholder="Months" value="1">
+
+  <button onclick="addClient()">Add Client</button>
+</div>
+
+<div class="card">
+  <h3>📊 Dashboard</h3>
+  <div id="dashboard"></div>
+</div>
+
+<div class="card">
+  <h3>📋 Clients</h3>
+  <div id="clients"></div>
+</div>
+
+<script>
+let clients = JSON.parse(localStorage.getItem("clients")) || [];
+
+// 🔥 FETCH GOLD PRICE
+async function fetchGold() {
+  try {
+    let res = await fetch("https://api.metals.live/v1/spot/gold");
+    let data = await res.json();
+
+    let usd = data[0].price;
+    let php = 56;
+    let perGram = (usd / 31.1) * php;
+
+    document.getElementById("livePrice").innerHTML =
+      "₱" + perGram.toFixed(2) + "/g (24K)";
+
+    document.getElementById("market").value = perGram.toFixed(2);
+
+  } catch {
+    document.getElementById("livePrice").innerHTML = "Failed. Use manual.";
+  }
+}
+
+// 🔍 FLIP CALCULATOR
+function analyze() {
+  let market = parseFloat(document.getElementById("market").value);
+  let weight = parseFloat(document.getElementById("weight").value);
+  let buy = parseFloat(document.getElementById("buy").value);
+  let sell = parseFloat(document.getElementById("sell").value);
+
+  if (!market || !weight || !buy || !sell) return;
+
+  let buyPerGram = buy / weight;
+  let totalSell = sell * weight;
+  let profit = totalSell - buy;
+  let roi = (profit / buy) * 100;
+
+  let status = "";
+  if (buyPerGram < market * 0.85) status = "<span class='green'>🔥 BUY</span>";
+  else if (buyPerGram < market * 0.95) status = "<span class='yellow'>OK</span>";
+  else status = "<span class='red'>PASS</span>";
+
+  document.getElementById("flipResult").innerHTML = `
+    ${status}<br>
+    Buy/g: ₱${buyPerGram.toFixed(2)}<br>
+    Profit: ₱${profit.toFixed(2)}<br>
+    ROI: ${roi.toFixed(2)}%
+  `;
+}
+
+// 🏦 ADD CLIENT
+function addClient() {
+  let name = document.getElementById("name").value;
+  let capital = parseFloat(document.getElementById("capital").value);
+  let interest = parseFloat(document.getElementById("interest").value);
+  let months = parseFloat(document.getElementById("months").value);
+
+  if (!name || !capital || !interest || !months) return;
+
+  let total = capital;
+  for (let i = 0; i < months; i++) {
+    total += total * (interest / 100);
+  }
+
+  let profit = total - capital;
+
+  clients.push({ name, capital, total, profit });
+
+  localStorage.setItem("clients", JSON.stringify(clients));
+
+  render();
+}
+
+// 📊 RENDER
+function render() {
+  let totalCapital = clients.reduce((a, b) => a + b.capital, 0);
+  let totalProfit = clients.reduce((a, b) => a + b.profit, 0);
+
+  document.getElementById("dashboard").innerHTML = `
+    Capital: ₱${totalCapital.toFixed(2)}<br>
+    Profit: ₱${totalProfit.toFixed(2)}
+  `;
+
+  let html = "";
+  clients.forEach(c => {
+    html += `
+      <div class="client">
+        ${c.name}<br>
+        ₱${c.capital} → ₱${c.total.toFixed(2)}<br>
+        Profit: ₱${c.profit.toFixed(2)}
+      </div>
+    `;
+  });
+
+  document.getElementById("clients").innerHTML = html;
+}
+
+render();
+</script>
+
+</body>
+</html>
