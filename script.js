@@ -1,4 +1,4 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMdQUS_AVAxB2-Yk7RMznO_3SDGRHKy0xk-TcITObVVevl8tyhFtVqIWpVE9WVqzyp/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0vx0aP4MqMMfMvZwpIBTgqp1XCbKgkSNR27cwLwUIYuPvuNFXt0Fs_nsZ8HYMC7Pa/exec";
 
 let lastDealData = null;
 
