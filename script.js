@@ -159,7 +159,7 @@ function saveDeal() {
     alert("No data - calculate first");
     return;
   }
-
+console.log("Sending:", lastDealData);
   fetch(SCRIPT_URL, {
     method: "POST",
     body: JSON.stringify(lastDealData),
