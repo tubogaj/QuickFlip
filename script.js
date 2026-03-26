@@ -43,10 +43,10 @@ function showTab(tab) {
 
 // ================= GOLD =================
 function calculateGold() {
-  const goldPrice24k = +document.getElementById("goldPrice").value;
-  const weight = +document.getElementById("weight").value;
-  const asking = +document.getElementById("askingPrice").value;
-  const ppg = +document.getElementById("pricePerGramInput").value;
+  const goldPrice24k = parseFloat(document.getElementById("goldPrice").value) || 0;
+  const weight = parseFloat(document.getElementById("weight").value) || 0;
+  const asking = parseFloat(document.getElementById("askingPrice").value) || 0;
+  const ppg = parseFloat(document.getElementById("pricePerGramInput").value) || 0;
   const purityInput = document.getElementById("purity").value;
 
   if (!goldPrice24k || !weight) {
@@ -54,7 +54,7 @@ function calculateGold() {
     return;
   }
 
-  // ✅ PURITY MAP (up to 14K only)
+  // ✅ FIXED PURITY MAP (no auto fallback to 1)
   const purityMap = {
     "24K": 1,
     "22K": 0.916,
@@ -64,22 +64,28 @@ function calculateGold() {
     "14K": 0.585
   };
 
-  const purity = purityMap[purityInput] || 1;
+  const purity = purityMap[purityInput];
+
+  // ❌ if invalid purity, stop
+  if (!purity) return;
 
   const currentGoldPrice = goldPrice24k * purity;
 
-  let buyPPG, totalCost;
+  let buyPPG = 0;
+  let totalCost = 0;
 
-  if (ppg && !asking) {
+  // ✅ FIXED LOGIC (no premature return)
+  if (ppg > 0 && asking === 0) {
     buyPPG = ppg;
     totalCost = ppg * weight;
-  } else if (!ppg && asking) {
+  } else if (asking > 0 && ppg === 0) {
     totalCost = asking;
     buyPPG = asking / weight;
-  } else if (ppg && asking) {
+  } else if (ppg > 0 && asking > 0) {
     buyPPG = ppg;
     totalCost = asking;
   } else {
+    document.getElementById("results").innerHTML = "";
     return;
   }
 
@@ -138,12 +144,11 @@ function calculateGold() {
     Profit: ₱${steal.profit.toFixed(0)} | (${steal.percent}%)
   `;
 
-  // ✅ FIXED PAYLOAD (NO .toFixed)
   lastDealData = {
     type: "gold",
     goldPrice: currentGoldPrice,
     weight: weight,
-    purity: purityInput,   // keep label (18K, etc.)
+    purity: purityInput,
     soldPrice: totalCost,
     pricePerGram: buyPPG,
     dealRating: label
