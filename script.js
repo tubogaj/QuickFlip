@@ -1,18 +1,21 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCxg8KU0TwpwDQoD_e5IeZ2EGmx3M-0j3YFAKtXoy3AZ-DmrToWhHnlNA04Vgt5meC/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwCSrZ1TGJIvhxDL_S2YRtaWUgFt-0TdR19v-fFQ7-eVtSs9xFeEX1B25OAoYL0bCJa/exec";
 
 let lastDealData = null;
 let phpToUsd = 1 / 56;
 
-// FETCH FX
+// FETCH LIVE FX RATE
 async function fetchRate() {
   try {
     const res = await fetch("https://api.exchangerate-api.com/v4/latest/PHP");
     const data = await res.json();
     phpToUsd = data.rates.USD;
-  } catch {}
+  } catch {
+    console.log("Using fallback FX");
+  }
 }
 fetchRate();
 
+// BUTTONS
 document.getElementById("calcBtn").addEventListener("click", calculate);
 document.getElementById("saveBtn").addEventListener("click", saveDeal);
 
@@ -28,7 +31,7 @@ function calculate() {
     return;
   }
 
-  // FLEX INPUT
+  // FLEX INPUT LOGIC
   let buyPPG, totalCost;
 
   if (ppgInput && !asking) {
@@ -56,13 +59,13 @@ function calculate() {
 
   const selectedPurityLabel = purityLabelMap[purity] || "";
 
-  // MARKET PRICE
+  // MARKET PRICE (BASED ON PURITY)
   const marketPPG = goldPrice * purity;
 
-  // ROI-BASED TARGETS
-  const quickROI = 0.03;   // 3%
-  const goodROI = 0.065;   // 6.5%
-  const stealROI = 0.10;   // 10%
+  // ROI TARGETS
+  const quickROI = 0.03;
+  const goodROI = 0.065;
+  const stealROI = 0.10;
 
   function computeROI(roi) {
     const selling = totalCost * (1 + roi);
@@ -84,17 +87,17 @@ function calculate() {
   const good = computeROI(goodROI);
   const steal = computeROI(stealROI);
 
-  // MARKET % INDICATOR
+  // MARKET POSITION
   const buyPercent = (buyPPG / marketPPG) * 100;
 
   let decisionText = "";
   let color = "";
 
   if (buyPercent > 100) {
-    decisionText = "❌ Bad deal";
+    decisionText = "❌ Bad Deal";
     color = "red";
   } else if (buyPercent >= 95) {
-    decisionText = "⚠️ Tight deal";
+    decisionText = "⚠️ Risky Deal";
     color = "orange";
   } else if (buyPercent >= 85) {
     decisionText = "✅ Good Deal";
@@ -104,6 +107,7 @@ function calculate() {
     color = "gold";
   }
 
+  // FORMATTERS
   function php(val) {
     return `₱${val.toFixed(0)}`;
   }
@@ -148,18 +152,18 @@ function calculate() {
     Profit: ${php(steal.profit)} (${usd(steal.usdProfit)}) | (${steal.percent.toFixed(1)}%)</p>
   `;
 
-  // SAVE DATA
+  // SAVE DATA (MATCHES YOUR SHEET EXACTLY)
   lastDealData = {
-    goldPrice,
-    weight,
-    purity,
-    soldPrice: good.selling.toFixed(0),
-    pricePerGram: buyPPG.toFixed(2),
-    dealRanking: decisionText
+    goldPrice: goldPrice,                  // 24k price
+    weight: weight,
+    purity: selectedPurityLabel,
+    soldPrice: totalCost.toFixed(0),       // TOTAL CAPITAL
+    pricePerGram: marketPPG.toFixed(2),    // MARKET BASED ON PURITY
+    dealRating: decisionText
   };
 }
 
-// SAVE TO SHEETS
+// SAVE FUNCTION
 function saveDeal() {
   if (!lastDealData) {
     alert("Calculate first");
