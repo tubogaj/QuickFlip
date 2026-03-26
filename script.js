@@ -8,38 +8,99 @@ document.getElementById("saveBtn").addEventListener("click", saveDeal);
 function calculate() {
   const goldPrice = +document.getElementById("goldPrice").value;
   const weight = +document.getElementById("weight").value;
-  const asking = +document.getElementById("askingPrice").value;
+  let asking = +document.getElementById("askingPrice").value;
+  let ppgInput = +document.getElementById("pricePerGramInput").value;
   const purity = +document.getElementById("purity").value;
 
-  if (!goldPrice || !weight || !asking) {
-    alert("Fill all fields");
+  if (!goldPrice || !weight) {
+    alert("Fill gold price and weight");
     return;
   }
 
-  const buyPPG = asking / weight;
+  // 🔁 FLEXIBLE INPUT LOGIC
+  let buyPPG, totalCost;
+
+  if (ppgInput && !asking) {
+    buyPPG = ppgInput;
+    totalCost = ppgInput * weight;
+  } else if (!ppgInput && asking) {
+    totalCost = asking;
+    buyPPG = asking / weight;
+  } else if (ppgInput && asking) {
+    buyPPG = ppgInput;
+    totalCost = asking;
+  } else {
+    alert("Enter asking price or price per gram");
+    return;
+  }
+
   const marketPPG = goldPrice * purity;
 
-  let emoji = "✅";
-  if (buyPPG > marketPPG) emoji = "❌";
-  else if (buyPPG >= marketPPG * 0.97) emoji = "⚠️";
-  else if (buyPPG < marketPPG * 0.85) emoji = "🔥";
+  // 🎯 DEAL EMOJI
+  let emoji = "✅ Good Deal";
+  if (buyPPG > marketPPG) emoji = "❌ Bad Deal";
+  else if (buyPPG >= marketPPG * 0.97) emoji = "⚠️ Breakeven";
+  else if (buyPPG < marketPPG * 0.85) emoji = "🔥 Steal";
 
-  const sell = goldPrice * weight;
-  const profit = sell - asking;
+  // 💰 SELL SCENARIOS
+  const quickSell = goldPrice * 0.92;
+  const goodSell = goldPrice;
+  const stealLow = goldPrice * 1.05;
+  const stealHigh = goldPrice * 1.10;
+
+  function compute(sellPPG) {
+    const total = sellPPG * weight;
+    const profit = total - totalCost;
+    const percent = (profit / totalCost) * 100;
+
+    return {
+      total,
+      profit,
+      percent,
+      usdTotal: total / 56,
+      usdProfit: profit / 56
+    };
+  }
+
+  const quick = compute(quickSell);
+  const good = compute(goodSell);
+  const stealMin = compute(stealLow);
+  const stealMax = compute(stealHigh);
+
+  function format(val) {
+    return `₱${val.toFixed(0)} ($${(val/56).toFixed(0)})`;
+  }
 
   document.getElementById("results").innerHTML = `
     <h3>Result</h3>
-    ₱${buyPPG.toFixed(2)} / g<br>
-    <span style="font-size:24px">${emoji}</span><br>
-    Est Sell: ₱${sell.toFixed(0)}<br>
-    Profit: ₱${profit.toFixed(0)}
+
+    <p><strong>Price per gram (seller):</strong> ₱${buyPPG.toFixed(2)}</p>
+    <p style="font-size:22px">${emoji}</p>
+
+    <hr>
+
+    <p><strong>Quick Flip</strong><br>
+    Sale: ${format(quick.total)}<br>
+    Profit: ${format(quick.profit)}<br>
+    ${quick.percent.toFixed(1)}%</p>
+
+    <p><strong>Good Deal</strong><br>
+    Sale: ${format(good.total)}<br>
+    Profit: ${format(good.profit)}<br>
+    ${good.percent.toFixed(1)}%</p>
+
+    <p><strong>Steal</strong><br>
+    Sale: ${format(stealMin.total)} - ${format(stealMax.total)}<br>
+    Profit: ${format(stealMin.profit)} - ${format(stealMax.profit)}<br>
+    ${stealMin.percent.toFixed(1)}% - ${stealMax.percent.toFixed(1)}%</p>
   `;
 
+  // SAVE CLEAN DATA
   lastDealData = {
     goldPrice,
     weight,
     purity,
-    soldPrice: sell.toFixed(0),
+    soldPrice: good.total.toFixed(0),
     pricePerGram: buyPPG.toFixed(2),
     dealRanking: emoji
   };
@@ -65,6 +126,7 @@ function saveDeal() {
   .catch(() => alert("Error ❌"));
 }
 
+// DASHBOARD LOADER (UNCHANGED)
 function loadDashboard() {
   fetch(SCRIPT_URL)
     .then(res => res.json())
