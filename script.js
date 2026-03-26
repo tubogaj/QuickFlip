@@ -2,7 +2,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMdQUS_AVAxB2-Yk7RM
 
 let lastDealData = null;
 
-// TAB SWITCH
+// ================= TAB =================
 function showTab(tab) {
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
   document.getElementById(tab).classList.add("active");
@@ -18,15 +18,18 @@ function showTab(tab) {
   }
 }
 
-// ================= GOLD AUTO =================
+// ================= GOLD =================
 function calculateGold() {
-  const goldPrice = +goldPrice.value;
-  const weight = +weight.value;
-  const asking = +askingPrice.value;
-  const ppg = +pricePerGramInput.value;
-  const purityVal = +purity.value;
+  const goldPrice = +document.getElementById("goldPrice").value;
+  const weight = +document.getElementById("weight").value;
+  const asking = +document.getElementById("askingPrice").value;
+  const ppg = +document.getElementById("pricePerGramInput").value;
+  const purityVal = +document.getElementById("purity").value;
 
-  if (!goldPrice || !weight) return;
+  if (!goldPrice || !weight) {
+    document.getElementById("results").innerHTML = "";
+    return;
+  }
 
   const buyPPG = ppg || (asking / weight);
   const totalCost = asking || (ppg * weight);
@@ -53,7 +56,7 @@ function calculateGold() {
   const good = roi(0.065);
   const steal = roi(0.10);
 
-  results.innerHTML = `
+  document.getElementById("results").innerHTML = `
     <h3>${label}</h3>
     Market: ₱${marketPPG.toFixed(2)}<br>
     Position: ${percent.toFixed(1)}%
@@ -78,9 +81,11 @@ function calculateGold() {
   };
 }
 
-// AUTO TRIGGERS GOLD
+// AUTO GOLD
 ["goldPrice","weight","askingPrice","pricePerGramInput","purity"]
-.forEach(id => document.getElementById(id).addEventListener("input", calculateGold));
+.forEach(id => {
+  document.getElementById(id).addEventListener("input", calculateGold);
+});
 
 // SAVE GOLD
 function saveDeal() {
@@ -93,12 +98,15 @@ function saveDeal() {
   }).then(()=>alert("Saved ✅"));
 }
 
-// ================= LOANS AUTO =================
+// ================= LOANS =================
 function generateLoan() {
-  const principalVal = +principal.value;
-  const term = loanTerm.value;
+  const principalVal = +document.getElementById("principal").value;
+  const term = document.getElementById("loanTerm").value;
 
-  if (!principalVal) return;
+  if (!principalVal) {
+    document.getElementById("loanResult").innerHTML = "";
+    return;
+  }
 
   const interest = principalVal * 0.20;
   const total = principalVal + interest;
@@ -110,7 +118,7 @@ function generateLoan() {
   const due = new Date();
   due.setDate(due.getDate() + days);
 
-  loanResult.innerHTML = `
+  document.getElementById("loanResult").innerHTML = `
     <h3>Loan Breakdown</h3>
     Capital: ₱${principalVal}<br>
     Interest: ₱${interest.toFixed(0)} | 20%<br>
@@ -120,10 +128,10 @@ function generateLoan() {
 
   window.loanData = {
     type:"loan",
-    name:name.value,
-    address:address.value,
-    idType:idType.value,
-    idNumber:idNumber.value,
+    name:document.getElementById("name").value,
+    address:document.getElementById("address").value,
+    idType:document.getElementById("idType").value,
+    idNumber:document.getElementById("idNumber").value,
     principal:principalVal,
     interest,
     profit:interest,
@@ -132,10 +140,10 @@ function generateLoan() {
   };
 }
 
-// AUTO TRIGGERS LOAN
-["principal","loanTerm"].forEach(id =>
-  document.getElementById(id).addEventListener("input", generateLoan)
-);
+// AUTO LOAN
+["principal","loanTerm"].forEach(id => {
+  document.getElementById(id).addEventListener("input", generateLoan);
+});
 
 // SAVE LOAN
 function saveLoan() {
@@ -148,11 +156,12 @@ function saveLoan() {
   }).then(()=>alert("Loan Saved ✅"));
 }
 
-// PDF
+// ================= PDF =================
 async function generatePDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  doc.text(`Loan Agreement\n\nBorrower: ${name.value}\nAmount: ₱${principal.value}\nInterest: 20%`,10,10);
+  doc.text(`Loan Agreement\n\nBorrower: ${document.getElementById("name").value}\nAmount: ₱${document.getElementById("principal").value}\nInterest: 20%`,10,10);
+
   doc.save("Loan.pdf");
 }
