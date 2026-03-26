@@ -2,64 +2,80 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>QuickFlip System</title>
+  <title>QuickFlip_</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- PREMIUM FONT -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<div class="tabs">
-  <button onclick="showTab('goldTab')">Gold</button>
-  <button onclick="showTab('loanTab')">Loans</button>
-</div>
+<div class="container">
 
-<!-- GOLD TAB -->
-<div id="goldTab" class="tab active">
-  <h1>Gold Calculator</h1>
+  <!-- LEFT -->
+  <div class="left" id="leftPanel">
 
-  <input id="goldPrice" type="number" placeholder="Gold Price (24k)">
-  <input id="weight" type="number" placeholder="Weight">
-  <input id="askingPrice" type="number" placeholder="Total Asking Price">
-  <input id="pricePerGramInput" type="number" placeholder="Price per gram">
+    <h1 class="title">QuickFlip_</h1>
 
-  <select id="purity">
-    <option value="0.999">24k</option>
-    <option value="0.916">22k</option>
-    <option value="0.875">21k</option>
-    <option value="0.750">18k</option>
-    <option value="0.585">14k</option>
-  </select>
+    <div class="tabs">
+      <button onclick="showTab('gold')">Gold</button>
+      <button onclick="showTab('loan')">Loans</button>
+    </div>
 
-  <button id="calcBtn">Calculate</button>
-  <button id="saveBtn">Save Deal</button>
+    <!-- GOLD -->
+    <div id="gold" class="tab active fade">
+      <input id="goldPrice" placeholder="Gold Price (24k)" type="number">
+      <input id="weight" placeholder="Weight (g)" type="number">
+      <input id="askingPrice" placeholder="Total Asking Price" type="number">
+      <input id="pricePerGramInput" placeholder="Price per gram" type="number">
 
-  <div id="results"></div>
-</div>
+      <select id="purity">
+        <option value="0.999">24k</option>
+        <option value="0.916">22k</option>
+        <option value="0.875">21k</option>
+        <option value="0.750">18k</option>
+        <option value="0.585">14k</option>
+      </select>
 
-<!-- LOANS TAB -->
-<div id="loanTab" class="tab">
-  <h1>Loan System</h1>
+      <button onclick="calculateGold()">Calculate</button>
+      <button onclick="saveDeal()">Save Deal</button>
 
-  <h3>Borrower</h3>
-  <input id="name" placeholder="Name">
-  <input id="address" placeholder="Address">
-  <input id="idType" placeholder="ID Type">
-  <input id="idNumber" placeholder="ID Number">
+      <div id="results"></div>
+    </div>
 
-  <h3>Loan</h3>
-  <input id="principal" type="number" placeholder="Principal">
+    <!-- LOANS -->
+    <div id="loan" class="tab fade">
+      <h3>Borrower</h3>
+      <input id="name" placeholder="Name">
+      <input id="address" placeholder="Address">
+      <input id="idType" placeholder="ID Type">
+      <input id="idNumber" placeholder="ID Number">
 
-  <select id="loanTerm">
-    <option>Weekly</option>
-    <option>Bi-Monthly</option>
-    <option>Monthly</option>
-  </select>
+      <h3>Loan</h3>
+      <input id="principal" placeholder="Principal" type="number">
 
-  <button onclick="generateLoan()">Calculate Loan</button>
-  <button onclick="saveLoan()">Save Loan</button>
-  <button onclick="generatePDF()">Generate Loan Agreement</button>
+      <select id="loanTerm">
+        <option>Weekly</option>
+        <option>Bi-Monthly</option>
+        <option>Monthly</option>
+      </select>
 
-  <div id="loanResult"></div>
+      <button onclick="generateLoan()">Calculate</button>
+      <button onclick="saveLoan()">Save Loan</button>
+      <button onclick="generatePDF()">Loan Agreement PDF</button>
+
+      <div id="loanResult"></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT (GOLD PANEL) -->
+  <div class="right" id="goldPanel">
+    <iframe src="https://goldpricez.com/ph/gram"></iframe>
+  </div>
+
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
