@@ -1,6 +1,21 @@
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCxg8KU0TwpwDQoD_e5IeZ2EGmx3M-0j3YFAKtXoy3AZ-DmrToWhHnlNA04Vgt5meC/exec";
 
 let lastDealData = null;
+let phpToUsd = 1 / 56; // fallback
+
+// 🔁 FETCH LIVE FX RATE
+async function fetchRate() {
+  try {
+    const res = await fetch("https://api.exchangerate-api.com/v4/latest/PHP");
+    const data = await res.json();
+    phpToUsd = data.rates.USD;
+  } catch (e) {
+    console.log("Using fallback rate");
+  }
+}
+
+// INIT FX RATE
+fetchRate();
 
 document.getElementById("calcBtn").addEventListener("click", calculate);
 document.getElementById("saveBtn").addEventListener("click", saveDeal);
@@ -17,7 +32,7 @@ function calculate() {
     return;
   }
 
-  // 🔁 FLEXIBLE INPUT LOGIC
+  // FLEX INPUT
   let buyPPG, totalCost;
 
   if (ppgInput && !asking) {
@@ -36,13 +51,13 @@ function calculate() {
 
   const marketPPG = goldPrice * purity;
 
-  // 🎯 DEAL EMOJI
+  // DEAL EMOJI
   let emoji = "✅ Good Deal";
   if (buyPPG > marketPPG) emoji = "❌ Bad Deal";
   else if (buyPPG >= marketPPG * 0.97) emoji = "⚠️ Breakeven";
   else if (buyPPG < marketPPG * 0.85) emoji = "🔥 Steal";
 
-  // 💰 SELL SCENARIOS
+  // SELL SCENARIOS
   const quickSell = goldPrice * 0.92;
   const goodSell = goldPrice;
   const stealLow = goldPrice * 1.05;
@@ -57,8 +72,8 @@ function calculate() {
       total,
       profit,
       percent,
-      usdTotal: total / 56,
-      usdProfit: profit / 56
+      usdTotal: total * phpToUsd,
+      usdProfit: profit * phpToUsd
     };
   }
 
@@ -67,35 +82,39 @@ function calculate() {
   const stealMin = compute(stealLow);
   const stealMax = compute(stealHigh);
 
-  function format(val) {
-    return `₱${val.toFixed(0)} ($${(val/56).toFixed(0)})`;
+  function formatPHPUSD(php, usd) {
+    return `₱${php.toFixed(0)} ($${usd.toFixed(0)})`;
   }
 
   document.getElementById("results").innerHTML = `
     <h3>Result</h3>
 
     <p><strong>Price per gram (seller):</strong> ₱${buyPPG.toFixed(2)}</p>
+    <p><strong>Total asking price:</strong> ${formatPHPUSD(totalCost, totalCost * phpToUsd)}</p>
+    <p><strong>Weight:</strong> ${weight}g</p>
+
     <p style="font-size:22px">${emoji}</p>
 
     <hr>
 
     <p><strong>Quick Flip</strong><br>
-    Sale: ${format(quick.total)}<br>
-    Profit: ${format(quick.profit)}<br>
-    ${quick.percent.toFixed(1)}%</p>
+    Sale price: ${formatPHPUSD(quick.total, quick.usdTotal)}<br>
+    Price per gram (entry point): ₱${buyPPG.toFixed(2)}<br>
+    Profit: ${formatPHPUSD(quick.profit, quick.usdProfit)} | (${quick.percent.toFixed(1)}%)</p>
 
     <p><strong>Good Deal</strong><br>
-    Sale: ${format(good.total)}<br>
-    Profit: ${format(good.profit)}<br>
-    ${good.percent.toFixed(1)}%</p>
+    Sale price: ${formatPHPUSD(good.total, good.usdTotal)}<br>
+    Price per gram (entry point): ₱${buyPPG.toFixed(2)}<br>
+    Profit: ${formatPHPUSD(good.profit, good.usdProfit)} | (${good.percent.toFixed(1)}%)</p>
 
     <p><strong>Steal</strong><br>
-    Sale: ${format(stealMin.total)} - ${format(stealMax.total)}<br>
-    Profit: ${format(stealMin.profit)} - ${format(stealMax.profit)}<br>
-    ${stealMin.percent.toFixed(1)}% - ${stealMax.percent.toFixed(1)}%</p>
+    Sale price: ${formatPHPUSD(stealMin.total, stealMin.usdTotal)} - ${formatPHPUSD(stealMax.total, stealMax.usdTotal)}<br>
+    Price per gram (entry point): ₱${buyPPG.toFixed(2)}<br>
+    Profit: ${formatPHPUSD(stealMin.profit, stealMin.usdProfit)} - ${formatPHPUSD(stealMax.profit, stealMax.usdProfit)}<br>
+    (${stealMin.percent.toFixed(1)}% - ${stealMax.percent.toFixed(1)}%)</p>
   `;
 
-  // SAVE CLEAN DATA
+  // SAVE
   lastDealData = {
     goldPrice,
     weight,
@@ -106,6 +125,7 @@ function calculate() {
   };
 }
 
+// SAVE
 function saveDeal() {
   if (!lastDealData) {
     alert("Calculate first");
@@ -126,7 +146,7 @@ function saveDeal() {
   .catch(() => alert("Error ❌"));
 }
 
-// DASHBOARD LOADER (UNCHANGED)
+// DASHBOARD
 function loadDashboard() {
   fetch(SCRIPT_URL)
     .then(res => res.json())
@@ -174,4 +194,5 @@ function loadDashboard() {
     });
 }
 
+// INIT
 loadDashboard();
