@@ -3,7 +3,10 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuickFlip - Gold Calculator</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
@@ -12,36 +15,41 @@
 
 <div class="header">
   <h1>QuickFlip</h1>
-  <div class="live">Live Gold: <span id="livePrice">Loading...</span></div>
+  <p>Gold Flip Decision Tool</p>
 </div>
 
 <div class="card">
 
-<input id="weight" placeholder="Weight (grams)" type="number">
-<input id="price" placeholder="Total Price (₱)" type="number">
+<label>Gold Price (24K per gram)</label>
+<input id="goldPrice" placeholder="e.g. 10000">
+
+<button class="link-btn" onclick="window.open('https://goldpricez.com/ph/gram','_blank')">
+Check Live Gold Price
+</button>
+
+<hr>
+
+<input id="weight" placeholder="Weight (grams)">
+<input id="price" placeholder="Total Price (₱)">
 
 <select id="karat">
-  <option value="1">24K</option>
-  <option value="0.916">22K</option>
-  <option value="0.875">21K</option>
-  <option value="0.75">18K</option>
+  <option value="24">24K</option>
+  <option value="22">22K</option>
+  <option value="21">21K</option>
+  <option value="18">18K</option>
+  <option value="14">14K</option>
 </select>
 
 <button onclick="analyze()">Analyze Deal</button>
-<button class="secondary" onclick="saveDeal()">Save to Cloud ☁️</button>
+<button class="secondary" onclick="saveDeal()">Save to Cloud</button>
 
 </div>
 
 <div id="resultCard" class="card hidden"></div>
 
-<div class="card">
-<h3>Deal History</h3>
-<div id="history"></div>
-<div class="total">Total Profit: ₱<span id="totalProfit">0</span></div>
-</div>
-
 </div>
 
 <script src="script.js"></script>
+
 </body>
 </html>
