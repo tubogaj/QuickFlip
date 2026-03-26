@@ -6,11 +6,15 @@ let lastDealData = null;
 document.addEventListener("DOMContentLoaded", () => {
 
   // GOLD AUTO
-  ["goldPrice","weight","askingPrice","pricePerGramInput","purity"]
-  .forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener("input", calculateGold);
-  });
+ ["goldPrice","weight","askingPrice","pricePerGramInput"]
+.forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("input", calculateGold);
+});
+
+// ✅ FIX FOR DROPDOWN
+const purityEl = document.getElementById("purity");
+if (purityEl) purityEl.addEventListener("change", calculateGold);
 
   // LOAN AUTO
   ["principal","loanTerm"]
