@@ -125,18 +125,38 @@ function calculateGold() {
 
 // SAVE GOLD
 function saveDeal() {
-  if (!lastDealData) return alert("No data");
+  if (!lastDealData) {
+    alert("No data");
+    return;
+  }
+
+  const payload = {
+    type: "gold",
+    goldPrice: lastDealData.goldPrice,
+    weight: lastDealData.weight,
+    purity: lastDealData.purity,
+    soldPrice: lastDealData.soldPrice,
+    pricePerGram: lastDealData.pricePerGram,
+    dealRating: lastDealData.dealRating
+  };
 
   fetch(SCRIPT_URL, {
     method: "POST",
-    body: JSON.stringify(lastDealData),
-    headers: { "Content-Type": "text/plain;charset=utf-8" }
+    body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    }
   })
   .then(res => res.text())
-  .then(() => alert("Saved ✅"))
-  .catch(() => alert("Error ❌"));
+  .then(res => {
+    console.log(res);
+    alert("Saved ✅");
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Error ❌");
+  });
 }
-
 // ================= LOANS =================
 function generateLoan() {
   const principal = +document.getElementById("principal").value;
@@ -219,6 +239,94 @@ async function generatePDF() {
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
+
+  const name = document.getElementById("name").value;
+  const address = document.getElementById("address").value;
+  const idType = document.getElementById("idType").value;
+  const idNumber = document.getElementById("idNumber").value;
+  const principal = +document.getElementById("principal").value;
+  const loanTerm = document.getElementById("loanTerm").value;
+
+  const today = new Date().toLocaleDateString();
+
+  const interest = principal * 0.20;
+  const total = principal + interest;
+
+  const dueDates = window.loanData.dueDate.split(",").map(d => d.trim());
+  const finalDueDate = dueDates[dueDates.length - 1];
+
+  let perPayment = total / dueDates.length;
+
+  const peso = (n) => `₱${n.toFixed(0)}`;
+
+  let y = 15;
+
+  function addLine(text, space = 6) {
+    const lines = doc.splitTextToSize(text, 180);
+    doc.text(lines, 15, y);
+    y += lines.length * space;
+  }
+
+  // TITLE
+  doc.setFont("Times", "Bold");
+  doc.setFontSize(14);
+  doc.text("LOAN AGREEMENT", 105, y, { align: "center" });
+  y += 10;
+
+  doc.setFont("Times", "Normal");
+  doc.setFontSize(11);
+
+  addLine(`This Loan Agreement is entered into by and between:`);
+  y += 2;
+
+  addLine(`Arnie Joyce A Tubog, of legal age, Filipino, with address at 099 Taal St Libis, Binangonan, Rizal, hereinafter referred to as the “Lender”;`);
+  y += 4;
+
+  addLine(`and`);
+  y += 4;
+
+  addLine(`${name}, of legal age, Filipino, with address at ${address}, holding valid ID ${idType} ${idNumber}, hereinafter referred to as the “Borrower”.`);
+  y += 6;
+
+  doc.setFont("Times", "Bold");
+  addLine("1. Loan Amount");
+  doc.setFont("Times", "Normal");
+  addLine(`The Lender agrees to lend the Borrower the amount of ${peso(principal)}, which the Borrower acknowledges having received.`);
+  y += 4;
+
+  doc.setFont("Times", "Bold");
+  addLine("2. Interest and Term");
+  doc.setFont("Times", "Normal");
+  addLine(`Interest is fixed at 20% monthly. Total obligation due on ${finalDueDate}.`);
+  y += 4;
+
+  doc.setFont("Times", "Bold");
+  addLine("3. Mode of Payment");
+  doc.setFont("Times", "Normal");
+  addLine("Payment schedule:");
+  y += 2;
+
+  dueDates.forEach(d => {
+    addLine(`• ${d} - ${peso(perPayment)}`);
+  });
+
+  y += 2;
+  addLine(`Total Obligation: ${peso(total)}`);
+  y += 6;
+
+  addLine(`IN WITNESS WHEREOF, signed on ${today} at ${address}.`);
+  y += 10;
+
+  addLine("LENDER: Arnie Joyce A Tubog");
+  y += 10;
+  addLine("BORROWER: ________________________");
+  y += 10;
+  addLine("WITNESS: ________________________");
+  y += 10;
+  addLine("WITNESS: ________________________");
+
+  doc.save(`Loan_Agreement_${name}.pdf`);
+}
 
   // ================= GET INPUTS =================
   const name = document.getElementById("name").value;
