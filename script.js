@@ -335,18 +335,17 @@ const marginTop = 15;
 const pageWidth = 180;
 const lineHeight = 6;
 
-const lines = doc.splitTextToSize(content, pageWidth);
+// ================= FORMAT (FIX TEXT SPACING ISSUE) =================
+doc.setFont("Times", "Normal");
+doc.setFontSize(11);
 
-let y = marginTop;
+// 🔥 CRITICAL FIX (this fixes hiwa-hiwalay letters)
+doc.setCharSpace(0);
 
-lines.forEach(line => {
-  if (y > 280) { // page break
-    doc.addPage();
-    y = marginTop;
-  }
-
-  doc.text(line, marginLeft, y);
-  y += lineHeight;
+// ✅ Let jsPDF handle paragraph flow properly
+doc.text(content, 15, 15, {
+  maxWidth: 180,
+  lineHeightFactor: 1.5
 });
 
   // ✅ CRITICAL FIX (missing before)
