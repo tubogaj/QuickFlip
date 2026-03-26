@@ -1,107 +1,115 @@
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCxg8KU0TwpwDQoD_e5IeZ2EGmx3M-0j3YFAKtXoy3AZ-DmrToWhHnlNA04Vgt5meC/exec";
+
+let lastDealData = null;
+
+document.getElementById("calcBtn").addEventListener("click", calculate);
+document.getElementById("saveBtn").addEventListener("click", saveDeal);
+
 function calculate() {
-  const goldPrice = parseFloat(document.getElementById("goldPrice").value);
-  const weight = parseFloat(document.getElementById("weight").value);
-  const asking = parseFloat(document.getElementById("askingPrice").value);
-  const purity = parseFloat(document.getElementById("purity").value);
+  const goldPrice = +document.getElementById("goldPrice").value;
+  const weight = +document.getElementById("weight").value;
+  const asking = +document.getElementById("askingPrice").value;
+  const purity = +document.getElementById("purity").value;
 
   if (!goldPrice || !weight || !asking) {
-    alert("Please fill all fields");
+    alert("Fill all fields");
     return;
   }
 
-  const pricePerGram = asking / weight;
+  const buyPPG = asking / weight;
+  const marketPPG = goldPrice * purity;
 
-  // MARKET-BASED SELL PRICES
-  const fastSell = goldPrice * 0.92;
-  const goodSell = goldPrice * 1.00;
-  const stealLow = goldPrice * 1.05;
-  const stealHigh = goldPrice * 1.10;
+  let emoji = "✅";
+  if (buyPPG > marketPPG) emoji = "❌";
+  else if (buyPPG >= marketPPG * 0.97) emoji = "⚠️";
+  else if (buyPPG < marketPPG * 0.85) emoji = "🔥";
 
-function calculate() {
-  const goldPrice = parseFloat(document.getElementById("goldPrice").value);
-  const weight = parseFloat(document.getElementById("weight").value);
-  const asking = parseFloat(document.getElementById("askingPrice").value);
-  const purity = parseFloat(document.getElementById("purity").value);
-
-  if (!goldPrice || !weight || !asking) {
-    alert("Please fill all fields");
-    return;
-  }
-
-  const buyPricePerGram = asking / weight;
-  const marketValuePerGram = goldPrice * purity;
-
-  // DEAL INDICATOR
-  let dealLabel = "";
-  let dealColor = "";
-
-  if (buyPricePerGram > marketValuePerGram) {
-    dealLabel = "❌ LUGI";
-    dealColor = "red";
-  } else if (buyPricePerGram >= marketValuePerGram * 0.95) {
-    dealLabel = "⚠️ BREAK EVEN";
-    dealColor = "orange";
-  } else if (buyPricePerGram < marketValuePerGram * 0.85) {
-    dealLabel = "🔥 STEAL";
-    dealColor = "gold";
-  } else {
-    dealLabel = "✅ GOOD DEAL";
-    dealColor = "lightgreen";
-  }
-
-  // SELL PRICES (market-based)
-  const fastSell = goldPrice * 0.92;
-  const goodSell = goldPrice;
-  const stealLow = goldPrice * 1.05;
-  const stealHigh = goldPrice * 1.10;
-
-  function compute(sellPrice) {
-    const total = sellPrice * weight;
-    const profit = total - asking;
-    const percent = (profit / asking) * 100;
-    const usdTotal = total / 56;
-    const usdProfit = profit / 56;
-
-    return {
-      totalPHP: total.toFixed(0),
-      totalUSD: usdTotal.toFixed(0),
-      profitPHP: profit.toFixed(0),
-      profitUSD: usdProfit.toFixed(0),
-      percent: percent.toFixed(1)
-    };
-  }
-
-  const fast = compute(fastSell);
-  const good = compute(goodSell);
-  const stealMin = compute(stealLow);
-  const stealMax = compute(stealHigh);
+  const sell = goldPrice * weight;
+  const profit = sell - asking;
 
   document.getElementById("results").innerHTML = `
-    <h3>Results</h3>
-
-    <p><strong>Price per gram:</strong> ₱${buyPricePerGram.toFixed(2)}</p>
-
-    <p style="font-size:18px; font-weight:bold; color:${dealColor}">
-      ${dealLabel}
-    </p>
-
-    <hr>
-
-    <p><strong>Fast Flip</strong><br>
-    ₱${fast.totalPHP} ($${fast.totalUSD})<br>
-    Profit: ₱${fast.profitPHP} ($${fast.profitUSD})<br>
-    ${fast.percent}%</p>
-
-    <p><strong>Good Deal</strong><br>
-    ₱${good.totalPHP} ($${good.totalUSD})<br>
-    Profit: ₱${good.profitPHP} ($${good.profitUSD})<br>
-    ${good.percent}%</p>
-
-    <p><strong>Steal</strong><br>
-    ₱${stealMin.totalPHP} - ₱${stealMax.totalPHP}<br>
-    ($${stealMin.totalUSD} - $${stealMax.totalUSD})<br>
-    Profit: ₱${stealMin.profitPHP} - ₱${stealMax.profitPHP}<br>
-    ($${stealMin.profitUSD} - $${stealMax.profitUSD})<br>
-    ${stealMin.percent}% - ${stealMax.percent}%</p>
+    <h3>Result</h3>
+    ₱${buyPPG.toFixed(2)} / g<br>
+    <span style="font-size:24px">${emoji}</span><br>
+    Est Sell: ₱${sell.toFixed(0)}<br>
+    Profit: ₱${profit.toFixed(0)}
   `;
+
+  lastDealData = {
+    goldPrice,
+    weight,
+    purity,
+    soldPrice: sell.toFixed(0),
+    pricePerGram: buyPPG.toFixed(2),
+    dealRanking: emoji
+  };
 }
+
+function saveDeal() {
+  if (!lastDealData) {
+    alert("Calculate first");
+    return;
+  }
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify(lastDealData),
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    }
+  })
+  .then(() => {
+    alert("Saved ✅");
+    loadDashboard();
+  })
+  .catch(() => alert("Error ❌"));
+}
+
+function loadDashboard() {
+  fetch(SCRIPT_URL)
+    .then(res => res.json())
+    .then(data => {
+
+      let totalDeals = data.length - 1;
+      let capital = 0;
+      let profit = 0;
+      let wins = 0;
+
+      const tbody = document.querySelector("#historyTable tbody");
+      tbody.innerHTML = "";
+
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+
+        const gold = +row[1];
+        const weight = +row[2];
+        const sold = +row[4];
+        const ppg = +row[5];
+        const rank = row[6];
+
+        const capitalUsed = ppg * weight;
+        capital += capitalUsed;
+        profit += sold - capitalUsed;
+
+        if (rank === "🔥" || rank === "✅") wins++;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${new Date(row[0]).toLocaleDateString()}</td>
+          <td>${gold}</td>
+          <td>${weight}</td>
+          <td>${ppg}</td>
+          <td>${rank}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      document.getElementById("totalDeals").innerText = totalDeals;
+      document.getElementById("totalCapital").innerText = capital.toFixed(0);
+      document.getElementById("totalProfit").innerText = profit.toFixed(0);
+      document.getElementById("winRate").innerText =
+        totalDeals ? ((wins / totalDeals) * 100).toFixed(1) : 0;
+    });
+}
+
+loadDashboard();
