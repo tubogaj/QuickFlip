@@ -10,13 +10,12 @@ async function fetchRate() {
     const data = await res.json();
     phpToUsd = data.rates.USD;
   } catch (e) {
-    console.log("Using fallback rate");
+    console.log("FX fallback used");
   }
 }
-
-// INIT FX RATE
 fetchRate();
 
+// BUTTONS
 document.getElementById("calcBtn").addEventListener("click", calculate);
 document.getElementById("saveBtn").addEventListener("click", saveDeal);
 
@@ -37,7 +36,7 @@ function calculate() {
 
   if (ppgInput && !asking) {
     buyPPG = ppgInput;
-    totalCost = ppgInput * weight;
+    totalCost = buyPPG * weight;
   } else if (!ppgInput && asking) {
     totalCost = asking;
     buyPPG = asking / weight;
@@ -49,48 +48,64 @@ function calculate() {
     return;
   }
 
+  // MARKET PRICE BASED ON PURITY
+  const purityLabelMap = {
+    0.999: "24k",
+    0.916: "22k",
+    0.875: "21k",
+    0.750: "18k",
+    0.585: "14k"
+  };
+
+  const selectedPurityLabel = purityLabelMap[purity] || "";
   const marketPPG = goldPrice * purity;
 
-  // DEAL EMOJI
-  let emoji = "✅ Good Deal";
-  if (buyPPG > marketPPG) emoji = "❌ Bad Deal";
-  else if (buyPPG >= marketPPG * 0.97) emoji = "⚠️ Breakeven";
-  else if (buyPPG < marketPPG * 0.85) emoji = "🔥 Steal";
+  // SELL LEVELS (PH MARKET REALISTIC)
+  const quickPPG = marketPPG * 0.95;
+  const goodPPG = marketPPG;
+  const stealLowPPG = marketPPG * 1.05;
+  const stealHighPPG = marketPPG * 1.10;
 
-  // SELL SCENARIOS
-  const quickSell = goldPrice * 0.92;
-  const goodSell = goldPrice;
-  const stealLow = goldPrice * 1.05;
-  const stealHigh = goldPrice * 1.10;
-
-  function compute(sellPPG) {
-    const total = sellPPG * weight;
-    const profit = total - totalCost;
+  function compute(ppg) {
+    const selling = ppg * weight;
+    const profit = selling - totalCost;
     const percent = (profit / totalCost) * 100;
 
     return {
-      total,
+      selling,
       profit,
       percent,
-      usdTotal: total * phpToUsd,
+      usdSelling: selling * phpToUsd,
       usdProfit: profit * phpToUsd
     };
   }
 
-  const quick = compute(quickSell);
-  const good = compute(goodSell);
-  const stealMin = compute(stealLow);
-  const stealMax = compute(stealHigh);
+  const quick = compute(quickPPG);
+  const good = compute(goodPPG);
+  const stealMin = compute(stealLowPPG);
+  const stealMax = compute(stealHighPPG);
 
-  function formatPHPUSD(php, usd) {
-    return `₱${php.toFixed(0)} ($${usd.toFixed(0)})`;
+  // DEAL INDICATOR
+  let emoji = "✅";
+  if (quick.profit < 0) emoji = "❌";
+  else if (quick.percent < 3) emoji = "⚠️";
+  else if (stealMax.percent >= 12) emoji = "🔥";
+
+  // FORMATTERS
+  function php(val) {
+    return `₱${val.toFixed(0)}`;
   }
 
+  function usd(val) {
+    return `$${val.toFixed(0)}`;
+  }
+
+  // RESULT OUTPUT
   document.getElementById("results").innerHTML = `
     <h3>Result</h3>
 
-    <p><strong>Price per gram (seller):</strong> ₱${buyPPG.toFixed(2)}</p>
-    <p><strong>Total asking price:</strong> ${formatPHPUSD(totalCost, totalCost * phpToUsd)}</p>
+    <p><strong>Price per gram (buy):</strong> ₱${buyPPG.toFixed(2)}</p>
+    <p><strong>Market price (${selectedPurityLabel}):</strong> ₱${marketPPG.toFixed(2)}</p>
     <p><strong>Weight:</strong> ${weight}g</p>
 
     <p style="font-size:22px">${emoji}</p>
@@ -98,28 +113,33 @@ function calculate() {
     <hr>
 
     <p><strong>Quick Flip</strong><br>
-    Sale price: ${formatPHPUSD(quick.total, quick.usdTotal)}<br>
-    Price per gram (entry point): ₱${buyPPG.toFixed(2)}<br>
-    Profit: ${formatPHPUSD(quick.profit, quick.usdProfit)} | (${quick.percent.toFixed(1)}%)</p>
+    Capital: ${php(totalCost)} (${usd(totalCost * phpToUsd)})<br>
+    Selling price: ${php(quick.selling)} (${usd(quick.usdSelling)})<br>
+    Price per gram (sell): ₱${quickPPG.toFixed(2)}<br>
+    Profit: ${php(quick.profit)} (${usd(quick.usdProfit)}) | (${quick.percent.toFixed(1)}%)</p>
 
     <p><strong>Good Deal</strong><br>
-    Sale price: ${formatPHPUSD(good.total, good.usdTotal)}<br>
-    Price per gram (entry point): ₱${buyPPG.toFixed(2)}<br>
-    Profit: ${formatPHPUSD(good.profit, good.usdProfit)} | (${good.percent.toFixed(1)}%)</p>
+    Capital: ${php(totalCost)} (${usd(totalCost * phpToUsd)})<br>
+    Selling price: ${php(good.selling)} (${usd(good.usdSelling)})<br>
+    Price per gram (sell): ₱${goodPPG.toFixed(2)}<br>
+    Profit: ${php(good.profit)} (${usd(good.usdProfit)}) | (${good.percent.toFixed(1)}%)</p>
 
     <p><strong>Steal</strong><br>
-    Sale price: ${formatPHPUSD(stealMin.total, stealMin.usdTotal)} - ${formatPHPUSD(stealMax.total, stealMax.usdTotal)}<br>
-    Price per gram (entry point): ₱${buyPPG.toFixed(2)}<br>
-    Profit: ${formatPHPUSD(stealMin.profit, stealMin.usdProfit)} - ${formatPHPUSD(stealMax.profit, stealMax.usdProfit)}<br>
+    Capital: ${php(totalCost)} (${usd(totalCost * phpToUsd)})<br>
+    Selling price: ${php(stealMin.selling)} - ${php(stealMax.selling)}<br>
+    (${usd(stealMin.usdSelling)} - ${usd(stealMax.usdSelling)})<br>
+    Price per gram (sell): ₱${stealLowPPG.toFixed(2)} - ₱${stealHighPPG.toFixed(2)}<br>
+    Profit: ${php(stealMin.profit)} - ${php(stealMax.profit)}<br>
+    (${usd(stealMin.usdProfit)} - ${usd(stealMax.usdProfit)}) | 
     (${stealMin.percent.toFixed(1)}% - ${stealMax.percent.toFixed(1)}%)</p>
   `;
 
-  // SAVE
+  // SAVE DATA
   lastDealData = {
     goldPrice,
     weight,
     purity,
-    soldPrice: good.total.toFixed(0),
+    soldPrice: good.selling.toFixed(0),
     pricePerGram: buyPPG.toFixed(2),
     dealRanking: emoji
   };
@@ -163,7 +183,6 @@ function loadDashboard() {
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
 
-        const gold = +row[1];
         const weight = +row[2];
         const sold = +row[4];
         const ppg = +row[5];
@@ -178,7 +197,6 @@ function loadDashboard() {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${new Date(row[0]).toLocaleDateString()}</td>
-          <td>${gold}</td>
           <td>${weight}</td>
           <td>${ppg}</td>
           <td>${rank}</td>
