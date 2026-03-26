@@ -2,6 +2,25 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOZlfoIfPYaejN7RpML
 
 let lastDealData = null;
 
+// ================= INIT =================
+document.addEventListener("DOMContentLoaded", () => {
+
+  // GOLD AUTO
+  ["goldPrice","weight","askingPrice","pricePerGramInput","purity"]
+  .forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("input", calculateGold);
+  });
+
+  // LOAN AUTO
+  ["principal","loanTerm"]
+  .forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("input", generateLoan);
+  });
+
+});
+
 // ================= TAB =================
 function showTab(tab) {
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -84,25 +103,22 @@ function calculateGold() {
     <hr>
 
     <strong>Quick Flip (2–4%)</strong><br>
-    Current Gold Price: ₱${currentGoldPrice.toFixed(2)}<br>
-    Selling price (sell): ₱${quick.sellTotal.toFixed(0)}<br>
-    Price per gram (sell): ₱${quick.sellPPG.toFixed(2)}<br>
+    Selling price: ₱${quick.sellTotal.toFixed(0)}<br>
+    Price per gram: ₱${quick.sellPPG.toFixed(2)}<br>
     Profit: ₱${quick.profit.toFixed(0)} | (${quick.percent}%)
 
     <br><br>
 
     <strong>Good Deal (5–8%)</strong><br>
-    Current Gold Price: ₱${currentGoldPrice.toFixed(2)}<br>
-    Selling price (sell): ₱${good.sellTotal.toFixed(0)}<br>
-    Price per gram (sell): ₱${good.sellPPG.toFixed(2)}<br>
+    Selling price: ₱${good.sellTotal.toFixed(0)}<br>
+    Price per gram: ₱${good.sellPPG.toFixed(2)}<br>
     Profit: ₱${good.profit.toFixed(0)} | (${good.percent}%)
 
     <br><br>
 
     <strong>Steal (10%)</strong><br>
-    Current Gold Price: ₱${currentGoldPrice.toFixed(2)}<br>
-    Selling price (sell): ₱${steal.sellTotal.toFixed(0)}<br>
-    Price per gram (sell): ₱${steal.sellPPG.toFixed(2)}<br>
+    Selling price: ₱${steal.sellTotal.toFixed(0)}<br>
+    Price per gram: ₱${steal.sellPPG.toFixed(2)}<br>
     Profit: ₱${steal.profit.toFixed(0)} | (${steal.percent}%)
   `;
 
@@ -117,46 +133,20 @@ function calculateGold() {
   };
 }
 
-// AUTO GOLD
-["goldPrice","weight","askingPrice","pricePerGramInput","purity"]
-.forEach(id => {
-  document.getElementById(id).addEventListener("input", calculateGold);
-});
-
-// SAVE GOLD
+// ================= SAVE GOLD =================
 function saveDeal() {
-  if (!lastDealData) {
-    alert("No data");
-    return;
-  }
-
-  const payload = {
-    type: "gold",
-    goldPrice: lastDealData.goldPrice,
-    weight: lastDealData.weight,
-    purity: lastDealData.purity,
-    soldPrice: lastDealData.soldPrice,
-    pricePerGram: lastDealData.pricePerGram,
-    dealRating: lastDealData.dealRating
-  };
+  if (!lastDealData) return alert("No data");
 
   fetch(SCRIPT_URL, {
     method: "POST",
-    body: JSON.stringify(payload),
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    }
+    body: JSON.stringify(lastDealData),
+    headers: { "Content-Type": "text/plain;charset=utf-8" }
   })
   .then(res => res.text())
-  .then(res => {
-    console.log(res);
-    alert("Saved ✅");
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Error ❌");
-  });
+  .then(() => alert("Saved ✅"))
+  .catch(() => alert("Error ❌"));
 }
+
 // ================= LOANS =================
 function generateLoan() {
   const principal = +document.getElementById("principal").value;
@@ -210,13 +200,7 @@ function generateLoan() {
   };
 }
 
-// AUTO LOANS
-["principal","loanTerm"]
-.forEach(id => {
-  document.getElementById(id).addEventListener("input", generateLoan);
-});
-
-// SAVE LOAN
+// ================= SAVE LOAN =================
 function saveLoan() {
   if (!window.loanData) return alert("No loan");
 
@@ -240,6 +224,7 @@ async function generatePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
+  // ================= INPUTS =================
   const name = document.getElementById("name").value;
   const address = document.getElementById("address").value;
   const idType = document.getElementById("idType").value;
@@ -247,125 +232,28 @@ async function generatePDF() {
   const principal = +document.getElementById("principal").value;
   const loanTerm = document.getElementById("loanTerm").value;
 
-  const today = new Date().toLocaleDateString();
+  const dateStr = new Date().toLocaleDateString();
 
+  // ================= CALC =================
   const interest = principal * 0.20;
   const total = principal + interest;
 
-  const dueDates = window.loanData.dueDate.split(",").map(d => d.trim());
-  const finalDueDate = dueDates[dueDates.length - 1];
-
-  let perPayment = total / dueDates.length;
-
-  const peso = (n) => `₱${n.toFixed(0)}`;
-
-  let y = 15;
-
-  function addLine(text, space = 6) {
-    const lines = doc.splitTextToSize(text, 180);
-    doc.text(lines, 15, y);
-    y += lines.length * space;
-  }
-
-  // TITLE
-  doc.setFont("Times", "Bold");
-  doc.setFontSize(14);
-  doc.text("LOAN AGREEMENT", 105, y, { align: "center" });
-  y += 10;
-
-  doc.setFont("Times", "Normal");
-  doc.setFontSize(11);
-
-  addLine(`This Loan Agreement is entered into by and between:`);
-  y += 2;
-
-  addLine(`Arnie Joyce A Tubog, of legal age, Filipino, with address at 099 Taal St Libis, Binangonan, Rizal, hereinafter referred to as the “Lender”;`);
-  y += 4;
-
-  addLine(`and`);
-  y += 4;
-
-  addLine(`${name}, of legal age, Filipino, with address at ${address}, holding valid ID ${idType} ${idNumber}, hereinafter referred to as the “Borrower”.`);
-  y += 6;
-
-  doc.setFont("Times", "Bold");
-  addLine("1. Loan Amount");
-  doc.setFont("Times", "Normal");
-  addLine(`The Lender agrees to lend the Borrower the amount of ${peso(principal)}, which the Borrower acknowledges having received.`);
-  y += 4;
-
-  doc.setFont("Times", "Bold");
-  addLine("2. Interest and Term");
-  doc.setFont("Times", "Normal");
-  addLine(`Interest is fixed at 20% monthly. Total obligation due on ${finalDueDate}.`);
-  y += 4;
-
-  doc.setFont("Times", "Bold");
-  addLine("3. Mode of Payment");
-  doc.setFont("Times", "Normal");
-  addLine("Payment schedule:");
-  y += 2;
-
-  dueDates.forEach(d => {
-    addLine(`• ${d} - ${peso(perPayment)}`);
-  });
-
-  y += 2;
-  addLine(`Total Obligation: ${peso(total)}`);
-  y += 6;
-
-  addLine(`IN WITNESS WHEREOF, signed on ${today} at ${address}.`);
-  y += 10;
-
-  addLine("LENDER: Arnie Joyce A Tubog");
-  y += 10;
-  addLine("BORROWER: ________________________");
-  y += 10;
-  addLine("WITNESS: ________________________");
-  y += 10;
-  addLine("WITNESS: ________________________");
-
-  doc.save(`Loan_Agreement_${name}.pdf`);
-}
-
-  // ================= GET INPUTS =================
-  const name = document.getElementById("name").value;
-  const address = document.getElementById("address").value;
-  const idType = document.getElementById("idType").value;
-  const idNumber = document.getElementById("idNumber").value;
-  const principal = +document.getElementById("principal").value;
-  const loanTerm = document.getElementById("loanTerm").value;
-
-  const today = new Date();
-  const dateStr = today.toLocaleDateString();
-
-  // ================= LOAN CALC =================
-  const interest = principal * 0.20;
-  const total = principal + interest;
-
-  // due dates (array)
+  // IMPORTANT: use same structure as your loanData
   const dueDatesArray = window.loanData.dueDate.split(",").map(d => d.trim());
   const finalDueDate = dueDatesArray[dueDatesArray.length - 1];
 
-  // ================= PAYMENT PER TERM =================
-  let perPayment = total;
+  // divide based on number of payments
+  const perPayment = total / dueDatesArray.length;
 
-  if (loanTerm === "Weekly") {
-    perPayment = total / dueDatesArray.length;
-  } else if (loanTerm === "Bi-Monthly") {
-    perPayment = total / dueDatesArray.length;
-  }
+  const peso = (n) => `₱${Number(n).toFixed(0)}`;
 
-  // ================= FORMAT =================
-  const peso = (n) => `₱${n.toFixed(0)}`;
-
-  // ================= DOCUMENT CONTENT =================
+  // ================= YOUR EXACT CONTENT =================
   const content = `
 LOAN AGREEMENT
 
 This Loan Agreement is entered into by and between:
 
-Arnie Joyce A Tubog, of legal age, Filipino, with address at 099 Taal St Libis, Binangonan, Rizal, hereinafter referred to as the “Lender”;
+Arnie Joyce A Tubog, of legal age, Filipino, with address at 099 Taal St, Libis, Binangonan, Rizal, hereinafter referred to as the “Lender”;
 
 and
 
@@ -380,7 +268,7 @@ The Borrower agrees to pay interest at the rate of twenty percent (20%) per mont
 3. Mode of Payment
 Payment shall be made based on the agreed schedule below:
 
-${dueDatesArray.map((d, i) => `• ${d} - ${peso(perPayment)}`).join("\n")}
+${dueDatesArray.map((d) => `• ${d} - ${peso(perPayment)}`).join("\n")}
 
 Total Obligation: ${peso(total)}
 
@@ -394,7 +282,7 @@ In case of delayed payment, the Borrower agrees to pay a penalty of One Hundred 
 Failure to pay the total obligation on the due date shall constitute default. Upon default, the entire outstanding balance, including principal, accrued interest, penalties, and other lawful charges, shall become immediately due and demandable.
 
 7. Legal Remedies
-In the event of default, the Lender shall have the right to pursue all remedies available under the laws of the Republic of the Philippines, including but not limited to filing a civil action for collection of sum of money and damages. The Borrower agrees to pay attorney’s fees equivalent to a reasonable percentage of the amount due, as well as all legal costs and expenses of collection as allowed by law.
+In the event of default, the Lender shall have the right to pursue all remedies available under the laws of the Republic of the Philippines, including but not limited to filing a civil action for the collection of the sum of money and damages. The Borrower agrees to pay attorney’s fees equivalent to a reasonable percentage of the amount due, as well as all legal costs and expenses of collection as allowed by law.
 
 8. Representation of the Borrower
 The Borrower represents that all information provided to the Lender is true and correct, and that he/she has the capacity and willingness to fulfill the obligation under this Agreement.
@@ -417,7 +305,7 @@ WITNESS: ________________________
 WITNESS: ________________________
 `;
 
-  // ================= FORMAT PDF =================
+  // ================= FORMAT (FIX CUT TEXT ISSUE) =================
   doc.setFont("Times", "Normal");
   doc.setFontSize(11);
 
