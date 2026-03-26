@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QuickFlip Gold Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="left-panel">
+    <h1>QuickFlip</h1>
+    <p class="subtitle">Gold Calculator</p>
+
+    <div class="form">
+
+      <label>Current Gold Price (24k)</label>
+      <input type="number" id="goldPrice" placeholder="₱ per gram">
+
+      <label>Weight (grams)</label>
+      <input type="number" id="weight" placeholder="grams">
+
+      <label>Asking Price</label>
+      <input type="number" id="askingPrice" placeholder="₱ total">
+
+      <label>Purity</label>
+      <select id="purity">
+        <option value="0.999">24k</option>
+        <option value="0.916">22k</option>
+        <option value="0.875">21k</option>
+        <option value="0.750">18k</option>
+        <option value="0.585">14k</option>
+      </select>
+
+      <button onclick="calculate()">Calculate</button>
+
+    </div>
+
+    <div class="results" id="results"></div>
+  </div>
+
+  <div class="right-panel">
+    <div class="live-box">
+      <p>Live Gold Price (PH)</p>
+      <iframe src="https://goldpricez.com/ph/gram"></iframe>
+    </div>
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
