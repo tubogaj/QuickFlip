@@ -4,65 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuickFlip - Gold Calculator</title>
 
-<style>
-body {
-  margin:0;
-  font-family: Arial;
-  background:#0f0f0f;
-  color:#fff;
-}
-
-.container {
-  max-width:500px;
-  margin:auto;
-  padding:15px;
-}
-
-.card {
-  background:#1c1c1c;
-  padding:18px;
-  border-radius:15px;
-  margin-bottom:15px;
-}
-
-input, select {
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  border:none;
-  border-radius:10px;
-  background:#2a2a2a;
-  color:#fff;
-  font-size:16px;
-}
-
-button {
-  width:100%;
-  padding:14px;
-  margin-top:15px;
-  border:none;
-  border-radius:10px;
-  background:#f5c542;
-  font-weight:bold;
-  font-size:16px;
-}
-
-.result {
-  margin-top:15px;
-  line-height:1.6;
-  font-size:14px;
-}
-
-.highlight { color:#f5c542; }
-.good { color:#4caf50; }
-.warn { color:#ff9800; }
-.bad { color:#f44336; }
-
-.small {
-  font-size:12px;
-  opacity:0.7;
-}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -84,131 +26,21 @@ button {
 </select>
 
 <button onclick="analyze()">Analyze Deal</button>
+<button onclick="saveDeal()">Save to Cloud ☁️</button>
 
-<div class="result" id="output"></div>
+<div id="output" style="margin-top:15px;"></div>
+</div>
+
+<div class="card">
+<h3>📊 Local History</h3>
+<div id="history"></div>
+<br>
+<b>Total Profit: ₱<span id="totalProfit">0</span></b>
 </div>
 
 </div>
 
-<script>
-
-let live24k = 10000;
-
-// FREE gold price fetch (no API key)
-async function getGoldPrice() {
-  try {
-    let res = await fetch("https://api.metals.live/v1/spot/gold");
-    let data = await res.json();
-
-    let pricePerOunceUSD = data[0].price;
-
-    // convert to PHP per gram
-    let usdToPhp = 56; // fallback rate
-    let perGram = (pricePerOunceUSD / 31.1035) * usdToPhp;
-
-    live24k = perGram;
-
-    document.getElementById("livePrice").innerText =
-      "₱" + perGram.toFixed(2) + "/g";
-  } catch (e) {
-    document.getElementById("livePrice").innerText =
-      "Using fallback ₱10,000/g";
-  }
-}
-
-getGoldPrice();
-
-function analyze() {
-
-let w = parseFloat(weight.value);
-let p = parseFloat(price.value);
-let purity = parseFloat(karat.value);
-
-if (!w || !p) return;
-
-let market = live24k * purity;
-let perGram = p / w;
-
-let pawn = market * 0.85 * w;
-let flip = market * 0.95 * w;
-let full = market * w;
-
-let pawnProfit = pawn - p;
-let flipProfit = flip - p;
-let fullProfit = full - p;
-
-let pawnPct = (pawnProfit / p) * 100;
-let flipPct = (flipProfit / p) * 100;
-let fullPct = (fullProfit / p) * 100;
-
-// SWEET SPOT
-let rating = "";
-let color = "";
-
-if (perGram <= market * 0.80) {
-  rating = "STEAL 🔥";
-  color = "good";
-}
-else if (perGram <= market * 0.90) {
-  rating = "SWEET SPOT 💰";
-  color = "good";
-}
-else if (perGram <= market * 0.98) {
-  rating = "TIGHT 😬";
-  color = "warn";
-}
-else {
-  rating = "OVERPRICED ❌";
-  color = "bad";
-}
-
-// explanation
-let explanation = "";
-
-if (perGram <= market * 0.90) {
-  explanation = "You are entering below market. May buffer ka kahit ibenta mo agad.";
-}
-else if (perGram <= market) {
-  explanation = "Break-even zone. Kailangan mo ng tamang buyer para kumita.";
-}
-else {
-  explanation = "Above market ka pumasok. High risk unless may buyer ka na.";
-}
-
-output.innerHTML = `
-
-<b class="highlight">Market:</b> ₱${market.toFixed(2)}/g <br>
-<b>Your Entry:</b> ₱${perGram.toFixed(2)}/g <br><br>
-
-<b>Deal:</b> <span class="${color}">${rating}</span><br>
-${explanation}<br><br>
-
-<hr>
-
-<b>💰 PROFIT BREAKDOWN</b><br><br>
-
-Pawn (85%) → ₱${pawn.toFixed(0)}<br>
-Profit: ₱${pawnProfit.toFixed(0)} (${pawnPct.toFixed(1)}%)<br><br>
-
-Quick Flip (95%) → ₱${flip.toFixed(0)}<br>
-Profit: ₱${flipProfit.toFixed(0)} (${flipPct.toFixed(1)}%)<br><br>
-
-Full Market → ₱${full.toFixed(0)}<br>
-Profit: ₱${fullProfit.toFixed(0)} (${fullPct.toFixed(1)}%)<br><br>
-
-<hr>
-
-<b>📊 SWEET SPOT</b><br>
-80% = Elite Deal<br>
-90% = Best Zone<br>
-98% = Risky<br>
-Above = Avoid
-
-`;
-
-}
-
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
