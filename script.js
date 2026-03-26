@@ -322,11 +322,26 @@ WITNESS: ________________________
 `;
 
   // ================= FORMAT (FIX CUT TEXT ISSUE) =================
-  doc.setFont("Times", "Normal");
-  doc.setFontSize(11);
+// Better font rendering
+doc.setFont("Times", "Normal");
+doc.setFontSize(11);
 
-  const lines = doc.splitTextToSize(content, 180);
-  doc.text(lines, 10, 10);
+// Proper margins
+const marginLeft = 15;
+const marginTop = 15;
+const pageWidth = 180;
+const lineHeight = 6;
 
-  doc.save(`Loan_Agreement_${name}.pdf`);
-}
+const lines = doc.splitTextToSize(content, pageWidth);
+
+let y = marginTop;
+
+lines.forEach(line => {
+  if (y > 280) { // page break
+    doc.addPage();
+    y = marginTop;
+  }
+
+  doc.text(line, marginLeft, y);
+  y += lineHeight;
+});
